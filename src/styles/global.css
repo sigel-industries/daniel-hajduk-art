@@ -82,7 +82,7 @@ p { margin: 0; }
 .hero-name {
   position: absolute; left: var(--gutter); right: var(--gutter); top: clamp(5.5rem, 13vh, 9rem);
   font-weight: 800; font-variation-settings: 'wdth' 125;
-  font-size: clamp(3.4rem, 15.2vw, 19rem); line-height: 0.8; letter-spacing: -0.02em;
+  font-size: max(3.4rem, 15.2vw); line-height: 0.8; letter-spacing: -0.02em;
   text-transform: uppercase; white-space: nowrap; margin: 0 -0.04em;
 }
 .hero-name .line { display: block; overflow: hidden; padding-bottom: 0.05em; }
