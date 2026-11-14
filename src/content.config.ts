@@ -17,12 +17,6 @@ const works = defineCollection({
       technique: z.string().optional(),
       materials: z.string().optional(),
       dimensions: z.string().optional(),
-      /** physical size in cm, used to hang the work at true relative scale */
-      size: z.object({ h: z.number().positive(), w: z.number().positive().optional(), d: z.number().positive().optional() }).optional(),
-      /** share of the cover photo's height taken by the work itself (1 = photographed edge to edge) */
-      coverSubject: z.number().min(0.2).max(1).default(1),
-      /** the wall colour this work is shown on; derived from the photo if omitted */
-      ground: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
       series: z.string().optional(),
       edition: z
         .object({
@@ -45,6 +39,8 @@ const works = defineCollection({
       /** close crops of the work (brushwork, surface, fragments); used as floating fragments */
       details: z.array(z.object({ src: image(), alt: z.string() })).default([]),
       selected: z.boolean().default(false),
+      /** shown large and alone in the archive, and opens the sequence */
+      featured: z.boolean().default(false),
       order: z.number().default(100),
       summary: z.string().optional(),
       draft: z.boolean().default(false),

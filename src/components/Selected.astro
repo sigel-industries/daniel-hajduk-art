@@ -1,0 +1,41 @@
+---
+/**
+ * The home page presentation: the works marked `selected`, arranged
+ * automatically into moments. Loud or wide works stand alone; two calmer
+ * upright works next to each other become a pair. Order comes from sequence(),
+ * so it adapts when the selection changes.
+ */
+import { Picture } from 'astro:assets';
+import type { Work } from '../lib/works';
+import { sequence, profile } from '../lib/curation';
+import { CATEGORIES } from '../data/site';
+import { workUrl } from '../lib/url';
+
+interface Props { works: Work[] }
+const works = await sequence(Astro.props.works);
+const profiled = await Promise.all(works.map(async (w) => ({ w, p: await profile(w) })));
+
+type Moment = { kind: 'solo' | 'pair'; items: typeof profiled };
+const moments: Moment[] = [];
+for (let i = 0; i < profiled.length; i++) {
+  const a = profiled[i], b = profiled[i + 1];
+  const calmUpright = (x: typeof a) => x && !x.p.wide && x.p.intensity < 0.42 && !x.w.data.featured;
+  if (b && calmUpright(a) && calmUpright(b)) { moments.push({ kind: 'pair', items: [a, b] }); i++; }
+  else moments.push({ kind: 'solo', items: [a] });
+}
+const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.singular, w.data.year].filter(Boolean).join(', ');
+---
+<div class="selected">
+  {moments.map((m, mi) => (
+    <section class:list={['moment', m.kind, m.kind === 'solo' && (mi % 2 ? 'cap-left' : 'cap-right')]} aria-label={m.items.map((x) => x.w.data.title).join(' and ')}>
+      {m.items.map(({ w, p }) => (
+        <figure class="m-work" style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(3)};--tone:${p.tone}`}>
+          <a href={workUrl(w.data.category, w.id)} class="m-img">
+            <Picture src={w.data.cover} alt={w.data.coverAlt} widths={[700, 1100, 1600, 2000]} sizes={m.kind === 'solo' ? '(max-width: 48rem) 100vw, 70vw' : '(max-width: 48rem) 100vw, 40vw'} formats={['avif', 'webp']} decoding="async" />
+          </a>
+          <figcaption><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a><span>{meta(w)}</span></figcaption>
+        </figure>
+      ))}
+    </section>
+  ))}
+</div>

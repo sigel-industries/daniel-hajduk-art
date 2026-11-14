@@ -4,6 +4,7 @@ title: Untitled No. 16
 category: paintings
 cover: ./paintings/p22.jpg
 coverAlt: A violet forest of thin trunks above a green meadow with haystacks and a yellow path
-selected: false
+featured: true
+selected: true
 order: 25
 ---

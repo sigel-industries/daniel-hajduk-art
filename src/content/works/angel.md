@@ -5,10 +5,6 @@ category: sculptures
 technique: 3D print, hand-applied acrylic surface finish
 materials: PLA, acrylic
 dimensions: Height approx. 45 cm
-size:
-  h: 45
-coverSubject: 0.95
-ground: '#6e3a30'
 edition:
   size: 50
   available: ['03/50', '04/50']

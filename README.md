@@ -45,8 +45,12 @@ images:                      # gallery on the detail page, in this order
     alt: The painting, full view
   - src: ./my-painting/detail.jpg
     alt: Detail of the surface
-selected: true               # show on the home page
-order: 2                     # lower comes first
+selected: true               # part of the home page presentation (keep it to ~6–10 works)
+featured: true               # optional: shown larger in the archive; spaced out automatically
+series: Night meadows        # optional: enables the Series filter and "More from" on the work page
+year: 2025                   # optional: enables the Period filter (by decade)
+details: [...]               # optional: close-up photos, shown after the views
+order: 2                     # default order (lower = newer/first) used as a tie-breaker
 summary: One or two sentences shown in listings.
 draft: false                 # true hides the work
 ---
@@ -103,3 +107,12 @@ scripts/check-links.mjs post-build checks
 - Only real photographs of the artist's own works. No AI-generated images, no other artists' work.
 - Photos may be cropped or re-ordered; the work itself is never retouched or altered.
 - No invented biography, exhibitions, awards or symbolism.
+
+## How works are arranged
+
+Nobody has to place works by hand. At build time every cover photo is measured
+(`src/lib/curation.ts`): how loud it is (saturation and number of strong hues) and
+whether it is warm or cool. The archive and the home page use that to order works so
+that loud paintings are separated by calmer ones and temperatures alternate.
+`featured` works open the sequence and appear larger; `selected` decides what the home
+page presents. Adding a work = adding one Markdown file and its photo.

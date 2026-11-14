@@ -4,16 +4,14 @@ import WorksIndex from '../../../components/WorksIndex.astro';
 import { CATEGORIES } from '../../../data/site';
 import { getWorks } from '../../../lib/works';
 
-// Only disciplines that contain works get a page.
+// Only disciplines that contain works get a page; it is the archive, pre-filtered.
 export async function getStaticPaths() {
   const works = await getWorks();
   return CATEGORIES.filter((c) => works.some((w) => w.data.category === c.id)).map((c) => ({ params: { category: c.id }, props: { category: c } }));
 }
-
 const { category } = Astro.props;
-const all = await getWorks();
-const works = all.filter((w) => w.data.category === category.id);
+const works = await getWorks();
 ---
 <Base title={category.label} current="works" description={`${category.label} by Daniel Hajduk. ${category.intro}`}>
-  <WorksIndex works={works} all={all} active={category.id} title={category.label} intro={category.intro} />
+  <WorksIndex works={works} title={category.label} intro={category.intro} preset={{ d: category.id }} />
 </Base>

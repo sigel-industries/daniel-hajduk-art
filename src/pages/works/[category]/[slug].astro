@@ -4,6 +4,8 @@ import Base from '../../../layouts/Base.astro';
 import Gallery from '../../../components/Gallery.astro';
 import { CATEGORIES, SITE, AVAILABILITY_LABEL } from '../../../data/site';
 import { getWorks, type Work } from '../../../lib/works';
+import { sequence, profile } from '../../../lib/curation';
+import { Picture } from 'astro:assets';
 import { url, workUrl, formatPrice } from '../../../lib/url';
 import { t } from '../../../i18n/ui';
 
@@ -17,6 +19,13 @@ const all = await getWorks();
 const at = all.findIndex((w) => w.id === work.id);
 const next = all.length > 1 ? all[(at + 1) % all.length] : null;
 const prev = all.length > 1 ? all[(at - 1 + all.length) % all.length] : null;
+// related: same series first, then same discipline, in the curated sequence
+const pool = all.filter((w) => w.id !== work.id);
+const related = (await sequence([
+  ...pool.filter((w) => work.data.series && w.data.series === work.data.series),
+  ...pool.filter((w) => w.data.category === work.data.category && !(work.data.series && w.data.series === work.data.series)),
+])).slice(0, 4);
+const relatedTones = await Promise.all(related.map((w) => profile(w).then((p) => p.tone)));
 const d = work.data;
 const { Content } = await render(work);
 const category = CATEGORIES.find((c) => c.id === d.category)!;
@@ -67,10 +76,26 @@ const jsonLd = {
       </div>
     )}
 
+    {related.length > 0 && (
+      <section class="related" aria-labelledby="related-title">
+        <h2 id="related-title">{work.data.series ? `More from ${work.data.series}` : `More ${category.label.toLowerCase()}`}</h2>
+        <ul>
+          {related.map((w, i) => (
+            <li style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(3)};--tone:${relatedTones[i]}`}>
+              <a href={workUrl(w.data.category, w.id)}>
+                <span class="c-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[300, 600]} sizes="(max-width: 48rem) 45vw, 20vw" formats={['avif', 'webp']} decoding="async" /></span>
+                <span class="c-title">{w.data.title}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
     {next && prev && (
       <nav class="work-nav" aria-label="More works">
         <a href={workUrl(prev.data.category, prev.id)}><span>Previous</span>{prev.data.title}</a>
-        <a href={url('/works/')} class="work-nav-all">All works</a>
+        <a href={url('/works/')} class="work-nav-all">Archive</a>
         <a href={workUrl(next.data.category, next.id)}><span>Next</span>{next.data.title}</a>
       </nav>
     )}

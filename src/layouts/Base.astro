@@ -6,7 +6,6 @@ import type { ImageMetadata } from 'astro';
 import { SITE } from '../data/site';
 import { t, type Lang } from '../i18n/ui';
 import { url } from '../lib/url';
-import { DEFAULT_GROUND } from '../lib/ground';
 import defaultOg from '../content/works/angel/angel-hero.jpg';
 
 interface Props {
@@ -17,11 +16,9 @@ interface Props {
   lang?: Lang;
   current?: 'works' | 'about' | 'contact' | 'home';
   jsonLd?: Record<string, unknown>;
-  /** wall colour and text colour of this page (a work's own ground on its page) */
-  ground?: { ground: string; ink: string };
 }
 
-const { title, description = SITE.description, image = defaultOg, imageAlt = 'ANGEL by Daniel Hajduk', lang = 'en', current = 'home', jsonLd, ground = DEFAULT_GROUND } = Astro.props;
+const { title, description = SITE.description, image = defaultOg, imageAlt = 'ANGEL by Daniel Hajduk', lang = 'en', current = 'home', jsonLd } = Astro.props;
 const pageTitle = title ? `${title} | ${SITE.title}` : SITE.title;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const og = await getImage({ src: image, width: 1200, format: 'jpg' });
@@ -42,7 +39,7 @@ const personLd = {
 };
 ---
 <!doctype html>
-<html lang={lang} style={`--ground:${ground.ground};--ink:${ground.ink}`}>
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -51,7 +48,7 @@ const personLd = {
     <link rel="canonical" href={canonical.href} />
     <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
-    <meta name="theme-color" content={ground.ground} />
+    <meta name="theme-color" content="#ecebe7" />
     <ClientRouter />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.title} />

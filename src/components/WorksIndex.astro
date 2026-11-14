@@ -1,26 +1,12 @@
 ---
-/**
- * The full collection as a gallery grid, newest first.
- * Filters: all, each discipline that has works, and works available now.
- */
-import Collection from './Collection.astro';
-import { CATEGORIES, type CategoryId } from '../data/site';
-import { url } from '../lib/url';
+import Archive from './Archive.astro';
 import type { Work } from '../lib/works';
 
-interface Props { works: Work[]; all: Work[]; active?: CategoryId; title?: string; intro?: string }
-const { works, all, active, title = 'Works', intro } = Astro.props;
-const present = CATEGORIES.filter((c) => all.some((w) => w.data.category === c.id));
-const anyAvailable = all.some((w) => w.data.availability === 'available');
+interface Props { works: Work[]; title?: string; intro?: string; preset?: { d?: string; s?: string } }
+const { works, title = 'Archive', intro, preset } = Astro.props;
 ---
 <header class="page-head">
   <h1 class="page-title">{title}</h1>
-  <p class="page-intro">{intro ?? `${works.length} works, earlier and recent.`}</p>
-  <nav class="filters" aria-label="Filter works">
-    <a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a>
-    {present.map((c) => <a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a>)}
-    {anyAvailable && <a href={url('/available/')}>Available</a>}
-  </nav>
+  <p class="page-intro">{intro ?? 'The complete record of works, earlier and recent. Filter by discipline, period or availability, or search by title.'}</p>
 </header>
-
-<Collection works={works} />
+<Archive works={works} preset={preset} />

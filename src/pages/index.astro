@@ -1,25 +1,29 @@
 ---
 import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Collection from '../components/Collection.astro';
+import Selected from '../components/Selected.astro';
 import { SITE, CATEGORIES } from '../data/site';
-import { getWorks } from '../lib/works';
-import { curated } from '../lib/order';
-import { url, workUrl } from '../lib/url';
+import { getWorks, getSelectedWorks } from '../lib/works';
+import { sequence, profile } from '../lib/curation';
+import { url, workUrl, formatPrice } from '../lib/url';
 
-const works = curated(await getWorks());
-const lead = works[0];
-const rest = works.slice(1);
-const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c.id));
+const all = await getWorks();
+const chosen = await getSelectedWorks();
+const ordered = await sequence(chosen.length ? chosen : all.slice(0, 8));
+const lead = ordered.find((w) => w.data.category === 'paintings') ?? ordered[0];
+const shown = ordered.filter((w) => w.id !== lead.id);
+const leadTone = (await profile(lead)).tone;
+const available = all.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
+const disciplines = CATEGORIES.filter((c) => all.some((w) => w.data.category === c.id)).map((c) => c.label.toLowerCase());
 ---
 <Base current="home">
   <section class="opening" aria-labelledby="hero-name">
     <div class="opening-text">
       <h1 class="hero-name" id="hero-name"><span>Daniel</span> <em>Hajduk</em></h1>
       <p class="opening-line">Painting, sculpture, photography and other visual work. Studio in {SITE.location}.</p>
-      <a class="opening-link" href="#works">{works.length} works</a>
+      <a class="opening-link" href="#selected">Selected works</a>
     </div>
-    <figure class="opening-work">
+    <figure class="opening-work" style={`--tone:${leadTone}`}>
       <a href={workUrl(lead.data.category, lead.id)}>
         <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600, 2000]} sizes="(max-width: 48rem) 100vw, 55vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
       </a>
@@ -27,15 +31,35 @@ const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c
     </figure>
   </section>
 
-  <section class="works-section" id="works" aria-labelledby="works-title">
+  <section class="works-section" id="selected" aria-labelledby="selected-title">
     <div class="works-head">
-      <h2 id="works-title">Works</h2>
-      <nav class="quiet-filters" aria-label="Filter works">
-        {present.map((c) => <a href={url(`/works/${c.id}/`)}>{c.label}</a>)}
-        <a href={url('/available/')}>Available</a>
-      </nav>
+      <h2 id="selected-title">Selected works</h2>
+      <a class="quiet-link" href={url('/works/')}>Archive of all {all.length} works</a>
     </div>
-    <Collection works={rest} />
+    <Selected works={shown} />
+  </section>
+
+  {available.length > 0 && (
+    <section class="avail" aria-labelledby="avail-title">
+      <h2 id="avail-title">Available now</h2>
+      <ul>
+        {available.map((w) => (
+          <li>
+            <a href={workUrl(w.data.category, w.id)}>
+              <span class="avail-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[200, 400]} sizes="6rem" formats={['avif', 'webp']} /></span>
+              <span class="avail-title">{w.data.title}</span>
+              <span class="avail-meta">{[w.data.technique, w.data.dimensions].filter(Boolean).join(', ')}</span>
+              <span class="avail-price">{w.data.price ? formatPrice(w.data.price.amount, w.data.price.currency) : 'On request'}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <section class="archive-invite" aria-labelledby="archive-title">
+    <h2 id="archive-title"><a href={url('/works/')}>Archive</a></h2>
+    <p>All {all.length} works — {disciplines.join(', ')} — searchable by discipline, period and availability.</p>
   </section>
 
   <section class="closing" aria-label="About">

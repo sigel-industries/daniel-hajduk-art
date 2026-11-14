@@ -7,6 +7,6 @@ coverAlt: Night meadow with orange flower heads and pink, violet and white plant
 details:
   - src: ./paintings/p04.jpg
     alt: Detail of the same painting, orange flower heads on a dark ground
-selected: false
+selected: true
 order: 12
 ---
