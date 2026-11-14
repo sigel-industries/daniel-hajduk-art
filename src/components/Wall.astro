@@ -1,0 +1,170 @@
+---
+/**
+ * THE WALL
+ * One continuous wall, measured in centimetres, that the visitor walks along.
+ * Vertical scrolling moves the visitor sideways. Every work hangs at its true size
+ * relative to the others (floor to ceiling = 2 m) and brings its own wall colour.
+ * Walking up to a work brings the visitor closer to it: it grows from its true
+ * size to a close view while it stands in front of them, and recedes as they pass.
+ * Without JavaScript the wall is a plain horizontally scrolling strip.
+ */
+import { Picture } from 'astro:assets';
+import { SITE, CATEGORIES } from '../data/site';
+import { url, workUrl } from '../lib/url';
+import { hang, WALL_CM } from '../lib/hang';
+import { workGround, DEFAULT_GROUND } from '../lib/ground';
+import type { Work } from '../lib/works';
+
+interface Props { works: Work[] }
+const { works } = Astro.props;
+
+const GAPS = [190, 250, 160, 220];
+const bays = await Promise.all(
+  works.map(async (w, i) => {
+    const h = hang(w);
+    const g = await workGround(w);
+    const cat = CATEGORIES.find((c) => c.id === w.data.category)!;
+    return { w, h, g, cat, gap: i === 0 ? 170 : GAPS[i % GAPS.length], href: workUrl(w.data.category, w.id) };
+  }),
+);
+const n = (v: number) => v.toFixed(2);
+const meters = Array.from({ length: 81 }, (_, i) => i);
+const ticks = [0, 50, 100, 150];
+---
+<section class="walk" data-walk aria-labelledby="wall-name">
+  <div class="walk-stage" data-stage>
+    <span class="cm-probe" data-probe aria-hidden="true"></span>
+    <div class="scale" aria-hidden="true">
+      {ticks.map((t) => <span style={`--t:${t}`}>{t}</span>)}
+      <span class="scale-unit">cm</span>
+    </div>
+    <p class="meter" aria-hidden="true"><span data-meter>0.0</span> m<span class="meter-of"> of <span data-total>…</span> m</span></p>
+
+    <div class="track" data-track>
+      <div class="bay bay-name" data-ground={DEFAULT_GROUND.ground} data-ink={DEFAULT_GROUND.ink} style="--gap:70">
+        <h1 class="wall-name" id="wall-name">{SITE.name}</h1>
+        <p class="wall-sub">Painting, sculpture, photography<br />and other visual work. {SITE.location}.</p>
+        <p class="walk-hint" aria-hidden="true">Scroll to walk along the wall</p>
+      </div>
+
+      {bays.map(({ w, h, g, cat, gap, href }) => (
+        <div
+          class:list={['bay', 'bay-work', { sculpture: !!h.plinth }]}
+          id={`at-${w.id}`}
+          data-ground={g.ground}
+          data-ink={g.ink}
+          style={`--gap:${gap};--w:${n(h.w)};--h:${n(h.h)};--b:${n(h.bottom)}${h.plinth ? `;--pw:${n(h.plinth.w)};--ph:${n(h.plinth.h)}` : ''}`}
+        >
+          {h.plinth && <span class="plinth" aria-hidden="true"></span>}
+          <a class="hung" href={href} aria-describedby={`cap-${w.id}`}>
+            <Picture src={w.data.cover} alt={w.data.coverAlt} widths={[400, 700, 1100, 1600]} sizes="(max-width: 48rem) 70vw, 40vw" formats={['avif', 'webp']} loading="eager" />
+          </a>
+          <div class="caption" id={`cap-${w.id}`}>
+            <h2 class="caption-title"><a href={href}>{w.data.title}</a></h2>
+            <p>{[cat.singular, w.data.year].filter(Boolean).join(', ')}</p>
+            {(w.data.materials ?? w.data.technique) && <p>{w.data.materials ?? w.data.technique}</p>}
+            {w.data.dimensions && <p>{w.data.dimensions}</p>}
+            <a class="caption-enter" href={href}>Enter the work</a>
+          </div>
+        </div>
+      ))}
+
+      <div class="bay bay-text" data-ground={DEFAULT_GROUND.ground} data-ink={DEFAULT_GROUND.ink} style="--gap:160">
+        <p class="wall-text">Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
+        <a class="wall-text-link" href={url('/about/')}>About the artist</a>
+      </div>
+
+      <nav class="bay bay-end" aria-label="Continue" data-ground={DEFAULT_GROUND.ground} data-ink={DEFAULT_GROUND.ink} style="--gap:170">
+        <a class="exit" href={url('/works/')}><span class="exit-word">Catalogue</span><span class="exit-note">Every work, its size, medium and availability</span></a>
+        <a class="exit" href={url('/contact/')}><span class="exit-word">Enquiries</span><span class="exit-note">Works, commissions and collaborations</span></a>
+      </nav>
+
+      <div class="floor" aria-hidden="true">
+        {meters.map((m) => <span style={`--m:${m}`}>{m} m</span>)}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function initWall() {
+    const walk = document.querySelector<HTMLElement>('[data-walk]');
+    const stage = walk?.querySelector<HTMLElement>('[data-stage]');
+    const track = walk?.querySelector<HTMLElement>('[data-track]');
+    if (!walk || !stage || !track) return;
+    const root = document.documentElement;
+    const meter = walk.querySelector<HTMLElement>('[data-meter]')!;
+    const total = walk.querySelector<HTMLElement>('[data-total]')!;
+    const bays = Array.from(track.querySelectorAll<HTMLElement>('.bay'));
+    walk.classList.add('is-live');
+
+    let span = 0, cm = 1, x = 0, current = '';
+    const works = bays.filter((b) => b.classList.contains('bay-work')).map((bay) => ({ bay, img: bay.querySelector<HTMLElement>('.hung')!, kmax: 1 }));
+
+    const measure = () => {
+      cm = (walk.querySelector<HTMLElement>('[data-probe]')!.offsetHeight || 100) / 100;
+      span = Math.max(0, track.scrollWidth - stage.clientWidth);
+      walk.style.height = `${span + innerHeight}px`;
+      total.textContent = (track.scrollWidth / cm / 100).toFixed(1);
+      works.forEach((w) => { w.kmax = Math.max(1, Math.min(3.6, (stage.clientHeight * 0.72) / w.img.offsetHeight, (stage.clientWidth * 0.56) / w.img.offsetWidth)); });
+      update();
+    };
+
+    const setGround = (g: string, i: string) => {
+      if (g === current) return;
+      current = g;
+      root.style.setProperty('--ground', g);
+      root.style.setProperty('--ink', i);
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', g);
+    };
+
+    const update = () => {
+      const top = walk.getBoundingClientRect().top;
+      x = Math.min(span, Math.max(0, -top));
+      track.style.transform = `translate3d(${-x}px,0,0)`;
+      const vw = stage.clientWidth, mid = x + vw / 2;
+      meter.textContent = (mid / cm / 100).toFixed(1);
+      // approaching: each work grows as it comes to stand in front of the visitor
+      let closest: { bay: HTMLElement; t: number } | null = null;
+      for (const w of works) {
+        const cx = w.bay.offsetLeft + w.img.offsetLeft + w.img.offsetWidth / 2;
+        const d = Math.abs(cx - mid) / Math.max(vw * 0.6, 560);
+        const lin = Math.max(0, 1 - d);
+        const t = lin * lin * (3 - 2 * lin);
+        w.bay.style.setProperty('--t', t.toFixed(3));
+        w.bay.style.setProperty('--k', (1 + (w.kmax - 1) * t).toFixed(3));
+        if (t > 0.3 && (!closest || t > closest.t)) closest = { bay: w.bay, t };
+      }
+      if (closest) { setGround(closest.bay.dataset.ground!, closest.bay.dataset.ink!); return; }
+      const plain = bays.find((b) => !b.classList.contains('bay-work'))!;
+      setGround(plain.dataset.ground!, plain.dataset.ink!);
+    };
+
+    // keyboard: bring the focused item in front of the visitor
+    track.querySelectorAll<HTMLElement>('.bay a').forEach((a) =>
+      a.addEventListener('focus', () => {
+        const bay = a.closest<HTMLElement>('.bay')!;
+        const target = Math.min(span, Math.max(0, bay.offsetLeft + Math.min(bay.offsetWidth, stage.clientWidth) / 2 - stage.clientWidth / 2));
+        scrollTo({ top: walk.offsetTop + target });
+      }),
+    );
+
+    let ticking = false;
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { update(); ticking = false; }); } };
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', measure);
+    document.fonts?.ready.then(measure);
+    track.querySelectorAll('img').forEach((img) => img.complete || img.addEventListener('load', measure, { once: true }));
+    measure();
+
+    // arriving from a work page: stand in front of that work
+    const at = location.hash.startsWith('#at-') ? document.getElementById(location.hash.slice(1)) : null;
+    if (at) requestAnimationFrame(() => scrollTo({ top: walk.offsetTop + Math.min(span, Math.max(0, at.offsetLeft + at.offsetWidth / 2 - stage.clientWidth / 2)) }));
+
+    document.addEventListener('astro:before-swap', () => {
+      removeEventListener('scroll', onScroll);
+      removeEventListener('resize', measure);
+    }, { once: true });
+  }
+  document.addEventListener('astro:page-load', initWall);
+</script>

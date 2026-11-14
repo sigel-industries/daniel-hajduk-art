@@ -14,6 +14,6 @@ const { category } = Astro.props;
 const all = await getWorks();
 const works = all.filter((w) => w.data.category === category.id);
 ---
-<Base title={category.label} current="works" quiet description={`${category.label} by Daniel Hajduk. ${category.intro}`}>
+<Base title={category.label} current="works" description={`${category.label} by Daniel Hajduk. ${category.intro}`}>
   <WorksIndex works={works} all={all} active={category.id} />
 </Base>

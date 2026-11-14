@@ -1,39 +1,34 @@
 ---
 import Base from '../layouts/Base.astro';
-import Fragment from '../components/Fragment.astro';
 import { SITE } from '../data/site';
-import { url, workUrl } from '../lib/url';
-import { getSelectedWorks } from '../lib/works';
-import { workPalette } from '../lib/palette';
+import { url } from '../lib/url';
 
 /*
  * Only confirmed facts are written as text.
  * Items marked with class="todo" are placeholders awaiting the artist's confirmation;
  * they render in development only.
  */
-const [lead] = await getSelectedWorks();
-const pieces = lead ? lead.data.details.slice(0, 2) : [];
-const palette = lead ? await workPalette(lead) : undefined;
 ---
-<Base title="About" current="about" palette={palette} description="About Daniel Hajduk, an artist working in painting, sculpture and other visual media.">
-  <article class="about">
-    <header class="about-head">
-      <h1 class="about-statement">Daniel Hajduk is an artist working across painting, sculpture and other visual techniques.</h1>
-    </header>
-
-    <div class="about-field">
-      {pieces.map((p, i) => (
-        <Fragment src={p.src} alt={p.alt} href={workUrl(lead.data.category, lead.id)} title={lead.data.title} x={i ? 70 : 8} y={i ? 40 : 0} w={i ? 14 : 18} depth={i ? 0.35 : 0.18} side={i ? 'end' : 'start'} />
-      ))}
-      <div class="about-text">
-        <p class="about-lede">Painting is the largest part of his work. Over the years his paintings have been acquired by collectors, including buyers abroad.</p>
-        <div class="prose">
-          <p>Alongside painting he develops sculptural work, such as the limited edition <a href={url('/works/sculptures/angel/')}>ANGEL</a>, and works in other visual techniques. He lives and works in {SITE.location}.</p>
-          {import.meta.env.DEV && <p><span class="todo">To confirm: a few sentences in the artist's own words about his approach, themes and materials.</span></p>}
-          {import.meta.env.DEV && <p><span class="todo">To confirm: education, exhibitions, collections or other biographical facts the artist wants to publish.</span></p>}
-        </div>
-        <a class="quiet-link" href={url('/works/')}>Index of works</a>
+<Base title="About" current="about" description="About Daniel Hajduk, an artist working in painting, sculpture and other visual media.">
+  <article class="page about">
+    <p class="page-kicker">The artist</p>
+    <h1 class="page-statement">Daniel Hajduk works across painting, sculpture and other visual techniques.</h1>
+    <div class="page-cols">
+      <dl class="facts">
+        <div><dt>Name</dt><dd>{SITE.name}</dd></div>
+        <div><dt>Disciplines</dt><dd>Painting, sculpture, photography, other visual techniques</dd></div>
+        <div><dt>Studio</dt><dd>{SITE.location}</dd></div>
+      </dl>
+      <div class="prose">
+        <p>Painting is the largest part of his work. Over the years his paintings have been acquired by collectors, including buyers abroad.</p>
+        <p>Alongside painting he develops sculptural work, such as the limited edition <a href={url('/works/sculptures/angel/')}>ANGEL</a>, and works in other visual techniques.</p>
+        {import.meta.env.DEV && <p><span class="todo">To confirm: a few sentences in the artist's own words about his approach, themes and materials.</span></p>}
+        {import.meta.env.DEV && <p><span class="todo">To confirm: education, exhibitions, collections or other biographical facts the artist wants to publish.</span></p>}
       </div>
     </div>
+    <nav class="page-exits" aria-label="Continue">
+      <a href={url('/')}>Walk along the wall</a>
+      <a href={url('/works/')}>Catalogue</a>
+    </nav>
   </article>
 </Base>

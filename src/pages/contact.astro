@@ -7,11 +7,12 @@ import { workUrl, formatPrice } from '../lib/url';
 const available = (await getWorks()).filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
 ---
 <Base title="Contact" current="contact" description="Contact Daniel Hajduk and see works currently available for acquisition.">
-  <section class="contact">
-    <h1 class="contact-word">Enquiries</h1>
-    <div class="contact-body">
-      <p class="contact-lede">For works, commissions, exhibitions and collaborations.</p>
-      <dl class="contact-facts">
+  <section class="page contact">
+    <p class="page-kicker">Contact</p>
+    <h1 class="page-word">Enquiries</h1>
+    <div class="page-cols">
+      <p class="page-lede">For works, commissions, exhibitions and collaborations.</p>
+      <dl class="facts">
         <div><dt>Studio</dt><dd>{SITE.location}</dd></div>
         {SITE.email
           ? <div><dt>E-mail</dt><dd><a href={`mailto:${SITE.email}`}>{SITE.email}</a></dd></div>
@@ -19,7 +20,6 @@ const available = (await getWorks()).filter((w) => w.data.availability === 'avai
         {SITE.social.map((s) => <div><dt>{s.label}</dt><dd><a href={s.url} rel="me noopener">{s.url.replace(/^https?:\/\//, '')}</a></dd></div>)}
       </dl>
     </div>
-
     {available.length > 0 && (
       <div class="available">
         <h2>Available works</h2>

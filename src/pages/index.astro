@@ -1,83 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
-import Fragment from '../components/Fragment.astro';
-import Apparition from '../components/Apparition.astro';
-import { SITE, CATEGORIES } from '../data/site';
+import Wall from '../components/Wall.astro';
 import { getWorks, getSelectedWorks } from '../lib/works';
-import { workPalette } from '../lib/palette';
-import { url, workUrl } from '../lib/url';
 
-const works = await getWorks();
+// The wall shows the selected works; if none are marked, every work.
 const chosen = await getSelectedWorks();
-const selected = chosen.length ? chosen : works.slice(0, 3);
-
-// Letters of the name, each with its own small, fixed displacement:
-// set still, they read as one name; on scroll they drift apart.
-const seed = (i: number, k: number) => {
-  const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
-  return v - Math.floor(v) - 0.5;
-};
-const letters = (word: string, offset: number) =>
-  [...word].map((ch, i) => ({ ch, dx: seed(i + offset, 1) * 0.9, dy: seed(i + offset, 2) * 1.6, r: seed(i + offset, 3) * 24, j: seed(i + offset, 4) * 0.05 }));
-const [first, last] = SITE.name.split(' ');
-const style = (l: ReturnType<typeof letters>[number]) => `--dx:${l.dx.toFixed(3)};--dy:${l.dy.toFixed(3)};--r:${l.r.toFixed(2)};--j:${l.j.toFixed(3)}em`;
-
-// Fragments: close details first, then further views, taken in turn from the selected works.
-type Frag = { src: any; alt: string; href: string; title: string };
-const pools: Frag[][] = selected.map((w) => {
-  const href = workUrl(w.data.category, w.id);
-  const views = w.data.images.filter((i) => i.src.src !== w.data.cover.src);
-  return [...w.data.details, ...views].map((i) => ({ src: i.src, alt: i.alt, href, title: w.data.title }));
-});
-const frags: Frag[] = [];
-for (let i = 0; frags.length < 7 && pools.some((p) => p[i]); i++) pools.forEach((p) => p[i] && frags.length < 7 && frags.push(p[i]));
-// Hand-set composition: x/y in % of the field, width in vw, depth = parallax strength.
-const SLOTS = [
-  { x: 62, y: 3, w: 19, depth: 0.32 },
-  { x: 6, y: 21, w: 12, depth: 0.12 },
-  { x: 79, y: 34, w: 13, depth: 0.5 },
-  { x: 22, y: 54, w: 27, depth: 0.22 },
-  { x: 74, y: 64, w: 15, depth: 0.42 },
-  { x: 3, y: 78, w: 11, depth: 0.55 },
-  { x: 49, y: 89, w: 12, depth: 0.14 },
-];
-const firstPalette = selected[0] ? await workPalette(selected[0]) : undefined;
-const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c.id)).map((c) => c.label.toLowerCase());
+const works = chosen.length ? chosen : await getWorks();
 ---
 <Base current="home">
-  <section class="threshold" aria-labelledby="name">
-    <h1 class="name" id="name" data-scatter aria-label={SITE.name}>
-      <span class="name-a" aria-hidden="true">{[...letters(first, 0)].map((l) => <span class="l" style={style(l)}>{l.ch}</span>)}</span>
-      <span class="name-b" aria-hidden="true">{[...letters(last, 10)].map((l) => <span class="l" style={style(l)}>{l.ch}</span>)}</span>
-    </h1>
-    <p class="threshold-line">Painting, sculpture, photography<br />and other visual work.</p>
-    <p class="threshold-place">{SITE.location}</p>
-    <span class="threshold-cue" aria-hidden="true"></span>
-  </section>
-
-  {frags.length > 0 && (
-    <section class="drift" aria-label="Fragments" data-palette={firstPalette && JSON.stringify(firstPalette)}>
-      <p class="drift-line l1" data-depth="0.08">Daniel Hajduk works across painting, sculpture and other visual techniques.</p>
-      {frags.map((f, i) => <Fragment {...f} {...SLOTS[i]} side={i % 2 ? 'end' : 'start'} />)}
-      <p class="drift-line l2" data-depth="0.06">Painting is the largest part of his work.</p>
-      <p class="drift-line l3" data-depth="0.1">His paintings have found collectors at home and abroad.</p>
-    </section>
-  )}
-
-  {selected.map((w, i) => <Apparition work={w} index={i} />)}
-
-  <nav class="coda" aria-label="Continue">
-    <a class="coda-link" href={url('/works/')}>
-      <span class="coda-word">Index of works</span>
-      <span class="coda-note">{works.length === 1 ? 'One work' : `${works.length} works`} in {present.join(', ')}</span>
-    </a>
-    <a class="coda-link" href={url('/about/')}>
-      <span class="coda-word">The artist</span>
-      <span class="coda-note">Painting, sculpture and other visual techniques</span>
-    </a>
-    <a class="coda-link" href={url('/contact/')}>
-      <span class="coda-word">Enquiries</span>
-      <span class="coda-note">Works, commissions and collaborations</span>
-    </a>
-  </nav>
+  <Wall works={works} />
 </Base>

@@ -17,6 +17,13 @@ const works = defineCollection({
       technique: z.string().optional(),
       materials: z.string().optional(),
       dimensions: z.string().optional(),
+      /** physical size in cm, used to hang the work at true relative scale */
+      size: z.object({ h: z.number().positive(), w: z.number().positive().optional(), d: z.number().positive().optional() }).optional(),
+      /** share of the cover photo's height taken by the work itself (1 = photographed edge to edge) */
+      coverSubject: z.number().min(0.2).max(1).default(1),
+      /** the wall colour this work is shown on; derived from the photo if omitted */
+      ground: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      series: z.string().optional(),
       edition: z
         .object({
           size: z.number().int().positive(),

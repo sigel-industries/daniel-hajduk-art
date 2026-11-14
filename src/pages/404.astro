@@ -3,10 +3,11 @@ import Base from '../layouts/Base.astro';
 import { url } from '../lib/url';
 ---
 <Base title="Page not found">
-  <section class="contact">
-    <h1 class="contact-word">Nothing here</h1>
-    <div class="contact-body">
-      <p class="contact-lede">This page does not exist or has moved. <a href={url('/works/')}>Index of works</a>, or back to the <a href={url('/')}>beginning</a>.</p>
+  <section class="page contact">
+    <p class="page-kicker">404</p>
+    <h1 class="page-word">Not on this wall</h1>
+    <div class="page-cols">
+      <p class="page-lede">This page does not exist or has moved. <a href={url('/')}>Walk along the wall</a> or open the <a href={url('/works/')}>catalogue</a>.</p>
     </div>
   </section>
 </Base>

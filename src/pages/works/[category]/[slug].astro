@@ -3,7 +3,8 @@ import { render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import Gallery from '../../../components/Gallery.astro';
 import { CATEGORIES, SITE, AVAILABILITY_LABEL } from '../../../data/site';
-import { workPalette } from '../../../lib/palette';
+import { workGround } from '../../../lib/ground';
+import { hang, WALL_CM } from '../../../lib/hang';
 import { getWorks, type Work } from '../../../lib/works';
 import { url, workUrl, formatPrice } from '../../../lib/url';
 import { t } from '../../../i18n/ui';
@@ -17,7 +18,8 @@ const { work } = Astro.props as { work: Work };
 const all = await getWorks();
 const at = all.findIndex((w) => w.id === work.id);
 const next = all.length > 1 ? all[(at + 1) % all.length] : null;
-const palette = await workPalette(work);
+const ground = await workGround(work);
+const h = hang(work);
 const d = work.data;
 const { Content } = await render(work);
 const category = CATEGORIES.find((c) => c.id === d.category)!;
@@ -38,19 +40,29 @@ const jsonLd = {
   }),
 };
 ---
-<Base title={d.title} description={description} image={d.cover} imageAlt={d.coverAlt} current="works" jsonLd={jsonLd} palette={palette}>
+<Base title={d.title} description={description} image={d.cover} imageAlt={d.coverAlt} current="works" jsonLd={jsonLd} ground={ground}>
   <article class="work" aria-labelledby="work-title">
     <Gallery images={images} details={d.details} title={d.title}>
-      <Fragment slot="stage">
-        <p class="stage-kicker"><a href={url(`/works/${category.id}/`)}>{category.singular}</a>{d.year && <span>, {d.year}</span>}</p>
-        <h1 class="stage-title" id="work-title">{d.title}</h1>
-        <dl class="stage-facts">
+      <div class="work-caption" slot="caption">
+        <p class="wc-artist">{SITE.name}</p>
+        <h1 class="wc-title" id="work-title">{d.title}</h1>
+        <dl class="wc-facts">
+          <div><dt>Discipline</dt><dd><a href={url(`/works/${category.id}/`)}>{category.singular}</a></dd></div>
+          {d.year && <div><dt>{t('work.year')}</dt><dd>{d.year}</dd></div>}
           {d.technique && <div><dt>{t('work.technique')}</dt><dd>{d.technique}</dd></div>}
           {d.materials && <div><dt>{t('work.materials')}</dt><dd>{d.materials}</dd></div>}
           {d.dimensions && <div><dt>{t('work.dimensions')}</dt><dd>{d.dimensions}</dd></div>}
           {d.edition && <div><dt>{t('work.edition')}</dt><dd>{d.edition.size} numbered and signed copies</dd></div>}
+          {d.series && <div><dt>Series</dt><dd>{d.series}</dd></div>}
         </dl>
-      </Fragment>
+        {d.size && (
+          <div class="wc-scale" aria-label={`Height ${d.size.h} cm, shown against a 2 metre wall`} role="img" style={`--h:${(d.size.h / WALL_CM).toFixed(4)}${h.plinth ? `;--p:${(h.plinth.h / WALL_CM).toFixed(4)}` : ''}`}>
+            <span class="wc-bar"><span class="wc-work"></span>{h.plinth && <span class="wc-plinth"></span>}</span>
+            <span class="wc-labels"><span>200 cm</span><span class="wc-h">{d.size.h} cm</span><span>0</span></span>
+          </div>
+        )}
+        <a class="wc-wall" href={`${url('/')}#at-${work.id}`}>Stand in front of it on the wall</a>
+      </div>
     </Gallery>
 
     <div class="work-text">
@@ -73,7 +85,7 @@ const jsonLd = {
     <nav class="work-next" aria-label="More works">
       {next
         ? <a href={workUrl(next.data.category, next.id)}><span>Next work</span><span class="work-next-title">{next.data.title}</span></a>
-        : <a href={url('/works/')}><span>All works</span><span class="work-next-title">Index</span></a>}
+        : <a href={url('/works/')}><span>Every work</span><span class="work-next-title">Catalogue</span></a>}
     </nav>
   </article>
 </Base>

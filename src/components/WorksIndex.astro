@@ -1,93 +1,88 @@
 ---
 /**
- * The precise way through the work: a typographic index.
- * One row per work; on a fine pointer the row shows a large preview
- * that follows the cursor and lends the field its colours.
+ * THE CATALOGUE
+ * The professional way through the work, in the same world as the wall:
+ * a line-up of every work standing side by side at true relative scale,
+ * then a precise list. Hovering a work lends the page its wall colour.
  * Only disciplines that contain works are offered as filters.
  */
-import { Picture, getImage } from 'astro:assets';
+import { Picture } from 'astro:assets';
 import { CATEGORIES, AVAILABILITY_LABEL, type CategoryId } from '../data/site';
 import { url, workUrl } from '../lib/url';
-import { workPalette } from '../lib/palette';
+import { hang } from '../lib/hang';
+import { workGround } from '../lib/ground';
 import type { Work } from '../lib/works';
 
 interface Props { works: Work[]; all: Work[]; active?: CategoryId }
 const { works, all, active } = Astro.props;
 const present = CATEGORIES.filter((c) => all.some((w) => w.data.category === c.id));
-const rows = await Promise.all(
-  works.map(async (w) => ({
-    w,
-    palette: await workPalette(w),
-    preview: (await getImage({ src: w.data.cover, width: 900, format: 'webp' })).src,
-  })),
-);
-const title = active ? CATEGORIES.find((c) => c.id === active)!.label : 'Index';
+const rows = await Promise.all(works.map(async (w) => ({ w, h: hang(w), g: await workGround(w), no: all.indexOf(w) + 1 })));
+const title = active ? CATEGORIES.find((c) => c.id === active)!.label : 'Catalogue';
+const n = (v: number) => v.toFixed(2);
 ---
-<header class="index-head">
-  <h1 class="index-title">{title}</h1>
-  <p class="index-count">{works.length === 1 ? 'One work' : `${works.length} works`}</p>
-  {present.length > 0 && (
-    <nav aria-label="Disciplines">
-      <ul class="index-filters">
-        <li><a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a></li>
-        {present.map((c) => <li><a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a></li>)}
-      </ul>
-    </nav>
-  )}
+<header class="cat-head">
+  <h1 class="cat-title">{title}</h1>
+  <div class="cat-meta">
+    <p>{works.length === 1 ? 'One work' : `${works.length} works`}. Shown side by side at true relative scale.</p>
+    {present.length > 0 && (
+      <nav aria-label="Disciplines">
+        <ul class="cat-filters">
+          <li><a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a></li>
+          {present.map((c) => <li><a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a></li>)}
+        </ul>
+      </nav>
+    )}
+  </div>
 </header>
 
-<ol class="index-list" data-index>
-  <li class="index-row index-labels" aria-hidden="true">
-    <span></span><span>Title</span><span>Discipline</span><span>Medium</span><span>Dimensions</span><span>Year</span>
-  </li>
-  {rows.map(({ w, palette, preview }) => {
-    const d = w.data;
-    const cat = CATEGORIES.find((c) => c.id === d.category)!;
-    return (
-      <li>
-        <a class="index-row" href={workUrl(d.category, w.id)} data-preview={preview} data-row-palette={JSON.stringify(palette)}>
-          <span class="index-thumb"><Picture src={d.cover} alt={d.coverAlt} widths={[160, 320]} sizes="5rem" formats={['avif', 'webp']} /></span>
-          <span class="index-name">{d.title}</span>
-          <span class="index-cell" data-label="Discipline">{cat.singular}</span>
-          <span class="index-cell" data-label="Medium">{d.materials ?? d.technique ?? ''}</span>
-          <span class="index-cell" data-label="Dimensions">{d.dimensions ?? ''}</span>
-          <span class="index-cell" data-label="Year">{d.year ?? ''}{d.availability !== 'available' && <span class="index-status"> {AVAILABILITY_LABEL[d.availability]}</span>}</span>
+<div class="lineup" aria-label="Works at relative scale">
+  <div class="lineup-scale" aria-hidden="true"><span>200 cm</span><span>100</span><span>0</span></div>
+  <ol class="lineup-row">
+    {rows.map(({ w, h, g, no }) => (
+      <li style={`--w:${n(h.w)};--h:${n(h.h)}`}>
+        <a href={workUrl(w.data.category, w.id)} data-ground={g.ground} data-ink={g.ink} tabindex="-1" aria-hidden="true">
+          <span class="lineup-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[300, 600, 900]} sizes="20vw" formats={['avif', 'webp']} /></span>
+          <span class="lineup-no">{no}</span>
         </a>
       </li>
-    );
-  })}
-</ol>
+    ))}
+  </ol>
+</div>
 
-<div class="index-preview" data-preview-box aria-hidden="true"><img alt="" data-preview-img /></div>
+<div class="cat-list-wrap">
+  <table class="cat-list">
+    <thead>
+      <tr><th scope="col">No.</th><th scope="col">Work</th><th scope="col">Discipline</th><th scope="col">Medium</th><th scope="col">Dimensions</th><th scope="col">Series</th><th scope="col">Year</th><th scope="col">Status</th></tr>
+    </thead>
+    <tbody>
+      {rows.map(({ w, g, no }) => {
+        const d = w.data;
+        const cat = CATEGORIES.find((c) => c.id === d.category)!;
+        return (
+          <tr data-ground={g.ground} data-ink={g.ink}>
+            <td class="cat-no">{no}</td>
+            <th scope="row"><a href={workUrl(d.category, w.id)}>{d.title}</a></th>
+            <td data-label="Discipline">{cat.singular}</td>
+            <td data-label="Medium">{[d.technique, d.materials].filter(Boolean).join('; ')}</td>
+            <td data-label="Dimensions">{d.dimensions ?? ''}</td>
+            <td data-label="Series">{d.series ?? (d.edition ? `Edition of ${d.edition.size}` : '')}</td>
+            <td data-label="Year">{d.year ?? ''}</td>
+            <td data-label="Status"><span class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}</span></td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
 
 <script>
-  function initIndex() {
-    const list = document.querySelector<HTMLElement>('[data-index]');
-    const box = document.querySelector<HTMLElement>('[data-preview-box]');
-    const img = document.querySelector<HTMLImageElement>('[data-preview-img]');
-    if (!list || !box || !img || !matchMedia('(pointer: fine)').matches) return;
-    let x = 0, y = 0, px = 0, py = 0, raf = 0;
-    const body = document.body.dataset.palette;
-    const follow = () => {
-      px += (x - px) * 0.14; py += (y - py) * 0.14;
-      box.style.translate = `${px.toFixed(1)}px ${py.toFixed(1)}px`;
-      raf = requestAnimationFrame(follow);
-    };
-    list.querySelectorAll<HTMLAnchorElement>('[data-preview]').forEach((row) => {
-      row.addEventListener('pointerenter', () => {
-        img.src = row.dataset.preview!;
-        box.classList.add('on');
-        try { (window as any).__fieldPalette?.(JSON.parse(row.dataset.rowPalette!)); } catch {}
-        (window as any).__fieldBoost?.(1);
-      });
-      row.addEventListener('pointerleave', () => {
-        box.classList.remove('on');
-        (window as any).__fieldBoost?.(0);
-        if (body) try { (window as any).__fieldPalette?.(JSON.parse(body)); } catch {}
-      });
+  function initCatalogue() {
+    const root = document.documentElement;
+    const base = { g: root.style.getPropertyValue('--ground'), i: root.style.getPropertyValue('--ink') };
+    document.querySelectorAll<HTMLElement>('.lineup [data-ground], .cat-list [data-ground]').forEach((el) => {
+      el.addEventListener('pointerenter', () => { root.style.setProperty('--ground', el.dataset.ground!); root.style.setProperty('--ink', el.dataset.ink!); });
+      el.addEventListener('pointerleave', () => { root.style.setProperty('--ground', base.g); root.style.setProperty('--ink', base.i); });
     });
-    list.addEventListener('pointermove', (e) => { x = e.clientX; y = e.clientY; if (!raf) { px = x; py = y; follow(); } });
-    document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
   }
-  document.addEventListener('astro:page-load', initIndex);
+  document.addEventListener('astro:page-load', initCatalogue);
 </script>
