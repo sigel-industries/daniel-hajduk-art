@@ -35,6 +35,8 @@ const works = defineCollection({
       cover: image(),
       coverAlt: z.string(),
       images: z.array(z.object({ src: image(), alt: z.string() })).default([]),
+      /** close crops of the work (brushwork, surface, fragments); used as floating fragments */
+      details: z.array(z.object({ src: image(), alt: z.string() })).default([]),
       selected: z.boolean().default(false),
       order: z.number().default(100),
       summary: z.string().optional(),

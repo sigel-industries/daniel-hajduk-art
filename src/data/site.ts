@@ -16,10 +16,10 @@ export const SITE = {
 };
 
 export const CATEGORIES = [
-  { id: 'paintings', label: 'Paintings', intro: 'Works on canvas, panel and paper.' },
-  { id: 'sculptures', label: 'Sculptures', intro: 'Sculptural and spatial works.' },
-  { id: 'photography', label: 'Photography', intro: 'Photographic work.' },
-  { id: 'other', label: 'Other works', intro: 'Experimental and mixed-media work.' },
+  { id: 'paintings', label: 'Paintings', singular: 'Painting', intro: 'Works on canvas, panel and paper.' },
+  { id: 'sculptures', label: 'Sculptures', singular: 'Sculpture', intro: 'Sculptural and spatial works.' },
+  { id: 'photography', label: 'Photography', singular: 'Photography', intro: 'Photographic work.' },
+  { id: 'other', label: 'Other works', singular: 'Other work', intro: 'Experimental and mixed-media work.' },
 ] as const;
 
 export type CategoryId = (typeof CATEGORIES)[number]['id'];
@@ -31,9 +31,3 @@ export const AVAILABILITY_LABEL: Record<string, string> = {
   'private-collection': 'Private collection',
   'on-request': 'On request',
 };
-
-/** Exhibition rooms: each category is a numbered room, in CATEGORIES order. */
-const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
-export function roomNumber(id: CategoryId): string {
-  return ROMAN[CATEGORIES.findIndex((c) => c.id === id)] ?? '';
-}

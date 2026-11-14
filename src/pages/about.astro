@@ -1,48 +1,38 @@
 ---
-import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
+import Fragment from '../components/Fragment.astro';
 import { SITE } from '../data/site';
-import { url } from '../lib/url';
-import angel from '../content/works/angel/angel-three-quarter-crop.jpg';
+import { url, workUrl } from '../lib/url';
+import { getSelectedWorks } from '../lib/works';
+import { workPalette } from '../lib/palette';
 
 /*
  * Only confirmed facts are written as text.
  * Items marked with class="todo" are placeholders awaiting the artist's confirmation;
  * they render in development only.
  */
+const [lead] = await getSelectedWorks();
+const pieces = lead ? lead.data.details.slice(0, 2) : [];
+const palette = lead ? await workPalette(lead) : undefined;
 ---
-<Base title="About" current="about" description="About Daniel Hajduk, an artist working in painting, sculpture and other visual media.">
+<Base title="About" current="about" palette={palette} description="About Daniel Hajduk, an artist working in painting, sculpture and other visual media.">
   <article class="about">
-    <header class="about-head" data-spot>
-      <p class="monogram" aria-hidden="true">DH</p>
-      <p class="page-room">About the artist</p>
-      <h1 class="about-statement">Daniel Hajduk is an artist working across painting, sculpture and other visual&nbsp;techniques.</h1>
+    <header class="about-head">
+      <h1 class="about-statement">Daniel Hajduk is an artist working across painting, sculpture and other visual techniques.</h1>
     </header>
 
-    <div class="about-body">
-      <figure class="about-figure">
-        <div class="reveal" data-reveal>
-          <div data-parallax="0.05">
-            <Picture src={angel} alt="ANGEL, a sculpture by Daniel Hajduk, seen from a three-quarter angle" widths={[480, 800, 1100]} sizes="(max-width: 60rem) 80vw, 30vw" formats={['avif', 'webp']} />
-          </div>
-        </div>
-        <figcaption><a href={url('/works/sculptures/angel/')}>ANGEL</a>, limited edition of 50</figcaption>
-      </figure>
-
+    <div class="about-field">
+      {pieces.map((p, i) => (
+        <Fragment src={p.src} alt={p.alt} href={workUrl(lead.data.category, lead.id)} title={lead.data.title} x={i ? 70 : 8} y={i ? 40 : 0} w={i ? 14 : 18} depth={i ? 0.35 : 0.18} side={i ? 'end' : 'start'} />
+      ))}
       <div class="about-text">
+        <p class="about-lede">Painting is the largest part of his work. Over the years his paintings have been acquired by collectors, including buyers abroad.</p>
         <div class="prose">
-          <p>Painting is the largest part of his work. Over the years his paintings have been acquired by collectors, including buyers abroad.</p>
-          <p>Alongside painting he develops sculptural work, such as the limited edition <a href={url('/works/sculptures/angel/')}>ANGEL</a>, and works in other visual techniques.</p>
+          <p>Alongside painting he develops sculptural work, such as the limited edition <a href={url('/works/sculptures/angel/')}>ANGEL</a>, and works in other visual techniques. He lives and works in {SITE.location}.</p>
           {import.meta.env.DEV && <p><span class="todo">To confirm: a few sentences in the artist's own words about his approach, themes and materials.</span></p>}
           {import.meta.env.DEV && <p><span class="todo">To confirm: education, exhibitions, collections or other biographical facts the artist wants to publish.</span></p>}
         </div>
-
-        <dl class="wall-text">
-          <div><dt>Name</dt><dd>{SITE.name}</dd></div>
-          <div><dt>Disciplines</dt><dd>Painting, sculpture, other visual techniques</dd></div>
-          <div><dt>Studio</dt><dd>{SITE.location}</dd></div>
-        </dl>
-        <a class="label-link" href={url('/works/')}>Walk through the works</a>
+        <a class="quiet-link" href={url('/works/')}>Index of works</a>
       </div>
     </div>
   </article>

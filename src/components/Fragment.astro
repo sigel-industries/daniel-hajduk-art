@@ -1,0 +1,31 @@
+---
+/**
+ * A piece of a work floating at a given depth. Links to the work.
+ * Position and size come from the caller as CSS variables (desktop),
+ * the mobile stream ignores them and lets fragments flow.
+ */
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  href: string;
+  title: string;
+  x: number; y: number; w: number; depth: number;
+  side?: 'start' | 'end';
+}
+const { src, alt, href, title, x, y, w, depth, side = 'start' } = Astro.props;
+const far = depth < 0.2;
+---
+<a
+  class:list={['fragment', side, { far }]}
+  href={href}
+  style={`--x:${x}%;--y:${y}%;--w:${w}vw;--depth:${depth}`}
+  data-depth={depth}
+>
+  <span class="fragment-img" data-reveal>
+    <Picture src={src} alt={alt} widths={[320, 560, 860]} sizes={`(max-width: 48rem) 62vw, ${w}vw`} formats={['avif', 'webp']} />
+  </span>
+  <span class="fragment-cap">{title}</span>
+</a>

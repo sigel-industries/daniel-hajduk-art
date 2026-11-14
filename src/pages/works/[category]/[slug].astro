@@ -2,10 +2,10 @@
 import { render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import Gallery from '../../../components/Gallery.astro';
-import WorkLabel from '../../../components/WorkLabel.astro';
-import { CATEGORIES, SITE, roomNumber } from '../../../data/site';
+import { CATEGORIES, SITE, AVAILABILITY_LABEL } from '../../../data/site';
+import { workPalette } from '../../../lib/palette';
 import { getWorks, type Work } from '../../../lib/works';
-import { url } from '../../../lib/url';
+import { url, workUrl, formatPrice } from '../../../lib/url';
 import { t } from '../../../i18n/ui';
 
 export async function getStaticPaths() {
@@ -14,6 +14,10 @@ export async function getStaticPaths() {
 }
 
 const { work } = Astro.props as { work: Work };
+const all = await getWorks();
+const at = all.findIndex((w) => w.id === work.id);
+const next = all.length > 1 ? all[(at + 1) % all.length] : null;
+const palette = await workPalette(work);
 const d = work.data;
 const { Content } = await render(work);
 const category = CATEGORIES.find((c) => c.id === d.category)!;
@@ -34,23 +38,42 @@ const jsonLd = {
   }),
 };
 ---
-<Base title={d.title} description={description} image={d.cover} imageAlt={d.coverAlt} current="works" jsonLd={jsonLd}>
-  <article class="work" aria-labelledby="work-title" style={`--chars:${d.title.length}`}>
-    <header class="work-head" data-spot>
-      <p class="page-room"><a href={url(`/works/${category.id}/`)}><span class="numeral">{roomNumber(category.id)}</span>{category.label}</a></p>
-      <p class="work-word" aria-hidden="true"><span class="fill">{d.title}</span><span class="outline">{d.title}</span></p>
-    </header>
-
-    <Gallery images={images} title={d.title}>
-      <div class="work-label" slot="label">
-        <WorkLabel work={work} headingLevel="h1" headingId="work-title" mode="detail" />
-      </div>
+<Base title={d.title} description={description} image={d.cover} imageAlt={d.coverAlt} current="works" jsonLd={jsonLd} palette={palette}>
+  <article class="work" aria-labelledby="work-title">
+    <Gallery images={images} details={d.details} title={d.title}>
+      <Fragment slot="stage">
+        <p class="stage-kicker"><a href={url(`/works/${category.id}/`)}>{category.singular}</a>{d.year && <span>, {d.year}</span>}</p>
+        <h1 class="stage-title" id="work-title">{d.title}</h1>
+        <dl class="stage-facts">
+          {d.technique && <div><dt>{t('work.technique')}</dt><dd>{d.technique}</dd></div>}
+          {d.materials && <div><dt>{t('work.materials')}</dt><dd>{d.materials}</dd></div>}
+          {d.dimensions && <div><dt>{t('work.dimensions')}</dt><dd>{d.dimensions}</dd></div>}
+          {d.edition && <div><dt>{t('work.edition')}</dt><dd>{d.edition.size} numbered and signed copies</dd></div>}
+        </dl>
+      </Fragment>
     </Gallery>
 
     <div class="work-text">
       {d.summary && <p class="work-lede">{d.summary}</p>}
       <div class="prose"><Content /></div>
-      <a class="back" href={url(`/works/${category.id}/`)}>{t('work.back')} {category.label.toLowerCase()}</a>
     </div>
+
+    <aside class="acquire" aria-labelledby="acquire-title">
+      <h2 id="acquire-title">Acquisition</h2>
+      <div class="acquire-body">
+        <p class="acquire-status"><span class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}{d.availability === 'available' && d.edition && d.edition.available.length > 0 && `, copies ${d.edition.available.join(' and ')}`}</span></p>
+        {d.price && d.availability === 'available' && <p class="acquire-price">{formatPrice(d.price.amount, d.price.currency)}{d.price.note && <span> {d.price.note}</span>}</p>}
+        <div class="acquire-actions">
+          {d.links.map((l) => <a class="quiet-button" href={l.url} rel="noopener" target="_blank">{l.label}<span class="visually-hidden"> (opens in a new tab)</span></a>)}
+          {SITE.email && <a class="quiet-button" href={`mailto:${SITE.email}?subject=${encodeURIComponent(d.title)}`}>{t('work.enquire')}</a>}
+        </div>
+      </div>
+    </aside>
+
+    <nav class="work-next" aria-label="More works">
+      {next
+        ? <a href={workUrl(next.data.category, next.id)}><span>Next work</span><span class="work-next-title">{next.data.title}</span></a>
+        : <a href={url('/works/')}><span>All works</span><span class="work-next-title">Index</span></a>}
+    </nav>
   </article>
 </Base>

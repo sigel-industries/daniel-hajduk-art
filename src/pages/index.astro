@@ -1,75 +1,83 @@
 ---
-import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Exhibit from '../components/Exhibit.astro';
-import EmptyWall from '../components/EmptyWall.astro';
-import { SITE, CATEGORIES, roomNumber } from '../data/site';
+import Fragment from '../components/Fragment.astro';
+import Apparition from '../components/Apparition.astro';
+import { SITE, CATEGORIES } from '../data/site';
 import { getWorks, getSelectedWorks } from '../lib/works';
-import { url } from '../lib/url';
+import { workPalette } from '../lib/palette';
+import { url, workUrl } from '../lib/url';
 
 const works = await getWorks();
-const selected = await getSelectedWorks();
-const featured = selected[0] ?? works[0];
-const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, works.filter((w) => w.data.category === c.id).length]));
-const empty = CATEGORIES.filter((c) => !counts[c.id]).map((c) => c.id);
-const [first, last] = SITE.name.toUpperCase().split(' ');
-// Disciplines for the moving band, written as the artist names them.
-const band = ['Painting', 'Sculpture', 'Photography', 'Other works'];
+const chosen = await getSelectedWorks();
+const selected = chosen.length ? chosen : works.slice(0, 3);
+
+// Letters of the name, each with its own small, fixed displacement:
+// set still, they read as one name; on scroll they drift apart.
+const seed = (i: number, k: number) => {
+  const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453;
+  return v - Math.floor(v) - 0.5;
+};
+const letters = (word: string, offset: number) =>
+  [...word].map((ch, i) => ({ ch, dx: seed(i + offset, 1) * 0.9, dy: seed(i + offset, 2) * 1.6, r: seed(i + offset, 3) * 24, j: seed(i + offset, 4) * 0.05 }));
+const [first, last] = SITE.name.split(' ');
+const style = (l: ReturnType<typeof letters>[number]) => `--dx:${l.dx.toFixed(3)};--dy:${l.dy.toFixed(3)};--r:${l.r.toFixed(2)};--j:${l.j.toFixed(3)}em`;
+
+// Fragments: close details first, then further views, taken in turn from the selected works.
+type Frag = { src: any; alt: string; href: string; title: string };
+const pools: Frag[][] = selected.map((w) => {
+  const href = workUrl(w.data.category, w.id);
+  const views = w.data.images.filter((i) => i.src.src !== w.data.cover.src);
+  return [...w.data.details, ...views].map((i) => ({ src: i.src, alt: i.alt, href, title: w.data.title }));
+});
+const frags: Frag[] = [];
+for (let i = 0; frags.length < 7 && pools.some((p) => p[i]); i++) pools.forEach((p) => p[i] && frags.length < 7 && frags.push(p[i]));
+// Hand-set composition: x/y in % of the field, width in vw, depth = parallax strength.
+const SLOTS = [
+  { x: 62, y: 3, w: 19, depth: 0.32 },
+  { x: 6, y: 21, w: 12, depth: 0.12 },
+  { x: 79, y: 34, w: 13, depth: 0.5 },
+  { x: 22, y: 54, w: 27, depth: 0.22 },
+  { x: 74, y: 64, w: 15, depth: 0.42 },
+  { x: 3, y: 78, w: 11, depth: 0.55 },
+  { x: 49, y: 89, w: 12, depth: 0.14 },
+];
+const firstPalette = selected[0] ? await workPalette(selected[0]) : undefined;
+const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c.id)).map((c) => c.label.toLowerCase());
 ---
 <Base current="home">
-  <section class="hero" aria-labelledby="hero-title" data-spot>
-    <h1 class="visually-hidden" id="hero-title">{SITE.name}, artist</h1>
-    <p class="hero-name fill" aria-hidden="true"><span class="n1">{first}</span><span class="n2">{last}</span></p>
-
-    {featured && (
-      <figure class="hero-figure">
-        <div data-parallax="-0.06">
-          <Picture src={featured.data.cover} alt={featured.data.coverAlt} widths={[520, 820, 1200]} sizes="(max-width: 60rem) 78vw, 36vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
-        </div>
-      </figure>
-    )}
-
-    <p class="hero-name outline" aria-hidden="true"><span class="n1">{first}</span><span class="n2">{last}</span></p>
-
-    <div class="hero-foot">
-      <p class="hero-role">Painting, sculpture and other visual work.<br />Studio in {SITE.location}.</p>
-      <nav class="plan" aria-label="Exhibition rooms">
-        <p class="plan-title">Rooms</p>
-        <ol>
-          {CATEGORIES.map((c) => (
-            <li>
-              <a href={url(`/works/${c.id}/`)}>
-                <span class="numeral">{roomNumber(c.id)}</span>
-                <span class="plan-name">{c.label}</span>
-                <span class="plan-count">{counts[c.id] === 1 ? '1 work' : counts[c.id] ? `${counts[c.id]} works` : 'In preparation'}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
-    </div>
+  <section class="threshold" aria-labelledby="name">
+    <h1 class="name" id="name" data-scatter aria-label={SITE.name}>
+      <span class="name-a" aria-hidden="true">{[...letters(first, 0)].map((l) => <span class="l" style={style(l)}>{l.ch}</span>)}</span>
+      <span class="name-b" aria-hidden="true">{[...letters(last, 10)].map((l) => <span class="l" style={style(l)}>{l.ch}</span>)}</span>
+    </h1>
+    <p class="threshold-line">Painting, sculpture, photography<br />and other visual work.</p>
+    <p class="threshold-place">{SITE.location}</p>
+    <span class="threshold-cue" aria-hidden="true"></span>
   </section>
 
-  <div class="band" aria-hidden="true">
-    <p class="band-row" data-drift="-0.35">{[...band, ...band, ...band].map((w, i) => <span class:list={{ o: i % 2 === 1 }}>{w}</span>)}</p>
-    <p class="band-row" data-drift="0.25">{[...band, ...band, ...band].reverse().map((w, i) => <span class:list={{ o: i % 2 === 0 }}>{w}</span>)}</p>
-  </div>
+  {frags.length > 0 && (
+    <section class="drift" aria-label="Fragments" data-palette={firstPalette && JSON.stringify(firstPalette)}>
+      <p class="drift-line l1" data-depth="0.08">Daniel Hajduk works across painting, sculpture and other visual techniques.</p>
+      {frags.map((f, i) => <Fragment {...f} {...SLOTS[i]} side={i % 2 ? 'end' : 'start'} />)}
+      <p class="drift-line l2" data-depth="0.06">Painting is the largest part of his work.</p>
+      <p class="drift-line l3" data-depth="0.1">His paintings have found collectors at home and abroad.</p>
+    </section>
+  )}
 
-  {selected.map((w, i) => <Exhibit work={w} flip={i % 2 === 1} lead={w.id === featured?.id ? 1 : undefined} />)}
+  {selected.map((w, i) => <Apparition work={w} index={i} />)}
 
-  {empty.length > 0 && <EmptyWall ids={empty} />}
-
-  <section class="statement" aria-labelledby="statement-title" data-spot>
-    <p class="monogram" aria-hidden="true">DH</p>
-    <h2 class="visually-hidden" id="statement-title">About the artist</h2>
-    <blockquote>
-      <p>Daniel Hajduk works across painting, sculpture and other visual techniques. His paintings have found collectors at home and abroad.</p>
-    </blockquote>
-    <a class="statement-link" href={url('/about/')}>About the artist</a>
-  </section>
-
-  <section class="enquiries" aria-labelledby="enquiries-title">
-    <h2 id="enquiries-title"><a href={url('/contact/')} class="enquiries-word">Enquiries</a></h2>
-    <p>Works, commissions and collaborations. Available works and prices are listed on the contact page.</p>
-  </section>
+  <nav class="coda" aria-label="Continue">
+    <a class="coda-link" href={url('/works/')}>
+      <span class="coda-word">Index of works</span>
+      <span class="coda-note">{works.length === 1 ? 'One work' : `${works.length} works`} in {present.join(', ')}</span>
+    </a>
+    <a class="coda-link" href={url('/about/')}>
+      <span class="coda-word">The artist</span>
+      <span class="coda-note">Painting, sculpture and other visual techniques</span>
+    </a>
+    <a class="coda-link" href={url('/contact/')}>
+      <span class="coda-word">Enquiries</span>
+      <span class="coda-note">Works, commissions and collaborations</span>
+    </a>
+  </nav>
 </Base>

@@ -1,34 +1,93 @@
 ---
-import Exhibit from './Exhibit.astro';
-import EmptyWall from './EmptyWall.astro';
-import { CATEGORIES, roomNumber, type CategoryId } from '../data/site';
-import { url } from '../lib/url';
-import { t } from '../i18n/ui';
+/**
+ * The precise way through the work: a typographic index.
+ * One row per work; on a fine pointer the row shows a large preview
+ * that follows the cursor and lends the field its colours.
+ * Only disciplines that contain works are offered as filters.
+ */
+import { Picture, getImage } from 'astro:assets';
+import { CATEGORIES, AVAILABILITY_LABEL, type CategoryId } from '../data/site';
+import { url, workUrl } from '../lib/url';
+import { workPalette } from '../lib/palette';
 import type { Work } from '../lib/works';
 
-interface Props { works: Work[]; title: string; intro?: string; active?: CategoryId }
-const { works, title, intro, active } = Astro.props;
-const scope = active ? CATEGORIES.filter((c) => c.id === active) : CATEGORIES;
-const empty = scope.filter((c) => !works.some((w) => w.data.category === c.id)).map((c) => c.id);
+interface Props { works: Work[]; all: Work[]; active?: CategoryId }
+const { works, all, active } = Astro.props;
+const present = CATEGORIES.filter((c) => all.some((w) => w.data.category === c.id));
+const rows = await Promise.all(
+  works.map(async (w) => ({
+    w,
+    palette: await workPalette(w),
+    preview: (await getImage({ src: w.data.cover, width: 900, format: 'webp' })).src,
+  })),
+);
+const title = active ? CATEGORIES.find((c) => c.id === active)!.label : 'Index';
 ---
-<header class="page-head" data-spot>
-  {active && <p class="page-room"><span class="numeral">{roomNumber(active)}</span>Room</p>}
-  <h1 class="display" style={`--chars:${title.length}`}>{title}</h1>
-  <div class="page-head-foot">
-    {intro && <p>{intro}</p>}
-    <nav aria-label="Rooms">
-      <ul class="filters">
-        <li><a href={url('/works/')} aria-current={!active ? 'page' : undefined}>{t('works.all')}</a></li>
-        {CATEGORIES.map((c) => (
-          <li><a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}><span class="numeral">{roomNumber(c.id)}</span>{c.label}</a></li>
-        ))}
+<header class="index-head">
+  <h1 class="index-title">{title}</h1>
+  <p class="index-count">{works.length === 1 ? 'One work' : `${works.length} works`}</p>
+  {present.length > 0 && (
+    <nav aria-label="Disciplines">
+      <ul class="index-filters">
+        <li><a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a></li>
+        {present.map((c) => <li><a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a></li>)}
       </ul>
     </nav>
-  </div>
+  )}
 </header>
 
-{works.map((w, i) => <Exhibit work={w} flip={i % 2 === 1} />)}
+<ol class="index-list" data-index>
+  <li class="index-row index-labels" aria-hidden="true">
+    <span></span><span>Title</span><span>Discipline</span><span>Medium</span><span>Dimensions</span><span>Year</span>
+  </li>
+  {rows.map(({ w, palette, preview }) => {
+    const d = w.data;
+    const cat = CATEGORIES.find((c) => c.id === d.category)!;
+    return (
+      <li>
+        <a class="index-row" href={workUrl(d.category, w.id)} data-preview={preview} data-row-palette={JSON.stringify(palette)}>
+          <span class="index-thumb"><Picture src={d.cover} alt={d.coverAlt} widths={[160, 320]} sizes="5rem" formats={['avif', 'webp']} /></span>
+          <span class="index-name">{d.title}</span>
+          <span class="index-cell" data-label="Discipline">{cat.singular}</span>
+          <span class="index-cell" data-label="Medium">{d.materials ?? d.technique ?? ''}</span>
+          <span class="index-cell" data-label="Dimensions">{d.dimensions ?? ''}</span>
+          <span class="index-cell" data-label="Year">{d.year ?? ''}{d.availability !== 'available' && <span class="index-status"> {AVAILABILITY_LABEL[d.availability]}</span>}</span>
+        </a>
+      </li>
+    );
+  })}
+</ol>
 
-{empty.length > 0 && (
-  <EmptyWall ids={empty} title={active ? 'This room is being installed' : 'Rooms in preparation'} />
-)}
+<div class="index-preview" data-preview-box aria-hidden="true"><img alt="" data-preview-img /></div>
+
+<script>
+  function initIndex() {
+    const list = document.querySelector<HTMLElement>('[data-index]');
+    const box = document.querySelector<HTMLElement>('[data-preview-box]');
+    const img = document.querySelector<HTMLImageElement>('[data-preview-img]');
+    if (!list || !box || !img || !matchMedia('(pointer: fine)').matches) return;
+    let x = 0, y = 0, px = 0, py = 0, raf = 0;
+    const body = document.body.dataset.palette;
+    const follow = () => {
+      px += (x - px) * 0.14; py += (y - py) * 0.14;
+      box.style.translate = `${px.toFixed(1)}px ${py.toFixed(1)}px`;
+      raf = requestAnimationFrame(follow);
+    };
+    list.querySelectorAll<HTMLAnchorElement>('[data-preview]').forEach((row) => {
+      row.addEventListener('pointerenter', () => {
+        img.src = row.dataset.preview!;
+        box.classList.add('on');
+        try { (window as any).__fieldPalette?.(JSON.parse(row.dataset.rowPalette!)); } catch {}
+        (window as any).__fieldBoost?.(1);
+      });
+      row.addEventListener('pointerleave', () => {
+        box.classList.remove('on');
+        (window as any).__fieldBoost?.(0);
+        if (body) try { (window as any).__fieldPalette?.(JSON.parse(body)); } catch {}
+      });
+    });
+    list.addEventListener('pointermove', (e) => { x = e.clientX; y = e.clientY; if (!raf) { px = x; py = y; follow(); } });
+    document.addEventListener('astro:before-swap', () => cancelAnimationFrame(raf), { once: true });
+  }
+  document.addEventListener('astro:page-load', initIndex);
+</script>

@@ -3,11 +3,10 @@ import Base from '../layouts/Base.astro';
 import { url } from '../lib/url';
 ---
 <Base title="Page not found">
-  <header class="page-head" data-spot>
-    <p class="page-room">Error 404</p>
-    <h1 class="display" style="--chars:9">Not found</h1>
-    <div class="page-head-foot">
-      <p>This page does not exist or has moved. <a href={url('/works/')}>Walk through the works</a> or return to the <a href={url('/')}>entrance</a>.</p>
+  <section class="contact">
+    <h1 class="contact-word">Nothing here</h1>
+    <div class="contact-body">
+      <p class="contact-lede">This page does not exist or has moved. <a href={url('/works/')}>Index of works</a>, or back to the <a href={url('/')}>beginning</a>.</p>
     </div>
-  </header>
+  </section>
 </Base>

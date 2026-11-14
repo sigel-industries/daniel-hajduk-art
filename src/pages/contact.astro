@@ -1,18 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
-import { SITE, AVAILABILITY_LABEL, CATEGORIES, roomNumber } from '../data/site';
+import { SITE, AVAILABILITY_LABEL } from '../data/site';
 import { getWorks } from '../lib/works';
 import { workUrl, formatPrice } from '../lib/url';
 
 const available = (await getWorks()).filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
 ---
 <Base title="Contact" current="contact" description="Contact Daniel Hajduk and see works currently available for acquisition.">
-  <header class="contact-head" data-spot>
-    <p class="page-room">Contact</p>
-    <h1 class="display" style="--chars:7.7">Enquiries</h1>
-    <div class="contact-foot">
-      <p>Works, commissions and exhibitions. Available works can be acquired through the linked sale listings.</p>
-      <dl class="wall-text">
+  <section class="contact">
+    <h1 class="contact-word">Enquiries</h1>
+    <div class="contact-body">
+      <p class="contact-lede">For works, commissions, exhibitions and collaborations.</p>
+      <dl class="contact-facts">
         <div><dt>Studio</dt><dd>{SITE.location}</dd></div>
         {SITE.email
           ? <div><dt>E-mail</dt><dd><a href={`mailto:${SITE.email}`}>{SITE.email}</a></dd></div>
@@ -20,32 +19,25 @@ const available = (await getWorks()).filter((w) => w.data.availability === 'avai
         {SITE.social.map((s) => <div><dt>{s.label}</dt><dd><a href={s.url} rel="me noopener">{s.url.replace(/^https?:\/\//, '')}</a></dd></div>)}
       </dl>
     </div>
-  </header>
 
-  <section class="list-of-works" aria-labelledby="low-title">
-    <h2 id="low-title">List of works</h2>
-    {available.length > 0 ? (
-      <table>
-        <thead>
-          <tr><th scope="col">Room</th><th scope="col">Work</th><th scope="col">Medium</th><th scope="col">Dimensions</th><th scope="col">Edition</th><th scope="col" class="num">Price</th></tr>
-        </thead>
-        <tbody>
+    {available.length > 0 && (
+      <div class="available">
+        <h2>Available works</h2>
+        <ul>
           {available.map((w) => {
             const d = w.data;
-            const cat = CATEGORIES.find((c) => c.id === d.category)!;
             return (
-              <tr>
-                <td data-label="Room"><span class="numeral">{roomNumber(d.category)}</span> {cat.label}</td>
-                <th scope="row" data-label="Work"><a href={workUrl(d.category, w.id)}>{d.title}</a></th>
-                <td data-label="Medium">{d.materials ?? d.technique ?? ''}</td>
-                <td data-label="Dimensions">{d.dimensions ?? ''}</td>
-                <td data-label="Edition">{d.edition ? `Copies ${d.edition.available.join(', ')}` : ''}</td>
-                <td data-label="Price" class="num">{d.price ? <>{formatPrice(d.price.amount, d.price.currency)}{d.price.note && <span class="label-note"> {d.price.note}</span>}</> : AVAILABILITY_LABEL[d.availability]}</td>
-              </tr>
+              <li>
+                <a href={workUrl(d.category, w.id)}>
+                  <span class="available-title">{d.title}</span>
+                  <span class="available-meta">{[d.materials ?? d.technique, d.dimensions, d.edition && d.edition.available.length ? `copies ${d.edition.available.join(', ')}` : null].filter(Boolean).join(', ')}</span>
+                  <span class="available-price">{d.price ? formatPrice(d.price.amount, d.price.currency) : AVAILABILITY_LABEL[d.availability]}</span>
+                </a>
+              </li>
             );
           })}
-        </tbody>
-      </table>
-    ) : <p class="empty">No works are listed as available at the moment.</p>}
+        </ul>
+      </div>
+    )}
   </section>
 </Base>

@@ -29,6 +29,15 @@ images:
     alt: ANGEL seen from slightly above, showing the surface texture
   - src: ./angel/angel-context.jpg
     alt: ANGEL on a sideboard, showing its scale in a room
+details:
+  - src: ./angel/angel-detail-wing.jpg
+    alt: Detail of ANGEL, the faceted feathers of the wing
+  - src: ./angel/angel-detail-head.jpg
+    alt: Detail of ANGEL, the faceted head without facial features
+  - src: ./angel/angel-detail-fracture.jpg
+    alt: Detail of ANGEL, the break in the body at the waist
+  - src: ./angel/angel-detail-base.jpg
+    alt: Detail of ANGEL, the slender leg growing out of the base
 selected: true
 order: 1
 summary: A fragmented figure with a single wing. Limited, numbered edition of 50, signed by the artist.
