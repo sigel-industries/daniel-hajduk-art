@@ -67,7 +67,7 @@ edition:
 
 `src/data/site.ts`: name, description, location, **contact e-mail**, social links and the category list.
 Placeholders that still need the artist's confirmation are marked `TODO(confirm)` in code and shown
-with a dashed bronze outline on the site (About and Contact pages).
+with a dashed bronze outline in `npm run dev` only; they are hidden in the production build.
 
 ## Languages
 

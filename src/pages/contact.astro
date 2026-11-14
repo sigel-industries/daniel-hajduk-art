@@ -10,15 +10,16 @@ const available = (await getWorks()).filter((w) => w.data.availability === 'avai
 <Base title="Contact" current="contact" description="Contact Daniel Hajduk and see works currently available for acquisition.">
   <header class="wrap page-head">
     <h1 style="--chars:7">Contact</h1>
-    <p>Enquiries about works, commissions and exhibitions.</p>
+    <p>Enquiries about works, commissions and exhibitions. Available works can be acquired through the linked sale listings.</p>
   </header>
   <section class="wrap" style="padding-bottom:clamp(3rem,6vw,5rem)">
     <div class="split">
       <div class="side">
         <dl class="facts">
           <dt>Studio</dt><dd>{SITE.location}</dd>
-          <dt>E-mail</dt>
-          <dd>{SITE.email ? <a href={`mailto:${SITE.email}`}>{SITE.email}</a> : <span class="todo">To confirm: public e-mail address</span>}</dd>
+          {SITE.email
+            ? <><dt>E-mail</dt><dd><a href={`mailto:${SITE.email}`}>{SITE.email}</a></dd></>
+            : import.meta.env.DEV && <><dt>E-mail</dt><dd><span class="todo">To confirm: public e-mail address</span></dd></>}
           {SITE.social.map((s) => <><dt>{s.label}</dt><dd><a href={s.url} rel="me noopener">{s.url.replace(/^https?:\/\//, '')}</a></dd></>)}
         </dl>
       </div>
