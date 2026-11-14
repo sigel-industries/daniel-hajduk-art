@@ -1,46 +1,27 @@
 ---
 import { Picture } from 'astro:assets';
+import Exhibition from '../components/Exhibition.astro';
 import Base from '../layouts/Base.astro';
-import { SITE, CATEGORIES } from '../data/site';
-import { getWorks, getSelectedWorks } from '../lib/works';
+import { SITE } from '../data/site';
+import { getWorks } from '../lib/works';
 import { url, workUrl, formatPrice } from '../lib/url';
 
 const works = await getWorks();
-const selected = await getSelectedWorks();
-const paintings = works.filter((w) => w.data.category === 'paintings');
-// opening image: the first selected painting
-const lead = selected.find((w) => w.data.category === 'paintings') ?? works[0];
 const available = works.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
-const showcase = selected.filter((w) => w.id !== lead.id && w.data.category === 'paintings').slice(0, 4);
 ---
 <Base current="home">
-  <section class="hero" aria-labelledby="hero-name">
-    <div class="hero-text">
-      <h1 class="hero-name" id="hero-name"><span>Daniel</span><span>Hajduk</span></h1>
+  <section class="intro" aria-labelledby="hero-name">
+    <h1 class="hero-name" id="hero-name"><span>Daniel</span><span>Hajduk</span></h1>
+    <div class="intro-side">
       <p class="hero-line">Painting, sculpture, photography and other visual work. {SITE.location}.</p>
       <p class="hero-links">
-        <a class="btn" href={url('/works/')}>View all works</a>
-        {available.length > 0 && <a class="btn ghost" href={url('/available/')}>Available works</a>}
+        <a class="btn ghost" href={url('/works/')}>All works</a>
+        {available.length > 0 && <a class="btn ghost" href={url('/available/')}>Available</a>}
       </p>
     </div>
-    <a class="hero-work" href={workUrl(lead.data.category, lead.id)}>
-      <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600]} sizes="(max-width: 60rem) 100vw, 55vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
-      <span class="hero-cap">{lead.data.title}</span>
-    </a>
   </section>
 
-  <section class="band" aria-labelledby="recent-title">
-    <h2 class="section-title" id="recent-title">Selected works</h2>
-    <ol class="showcase">
-      {showcase.map((w, i) => (
-        <li class:list={{ flip: i % 2 === 1 }}>
-          <a href={workUrl(w.data.category, w.id)} class="show-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[600, 1000, 1500]} sizes="(max-width: 60rem) 100vw, 55vw" formats={['avif', 'webp']} /></a>
-          <p class="show-cap"><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a><span>{[CATEGORIES.find((c) => c.id === w.data.category)!.singular, w.data.year].filter(Boolean).join(', ')}</span></p>
-        </li>
-      ))}
-    </ol>
-    <p class="band-more"><a class="btn ghost" href={url('/works/')}>See all {works.length} works</a></p>
-  </section>
+  <Exhibition works={works} />
 
   {available.length > 0 && (
     <section class="band available-band" aria-labelledby="available-title">

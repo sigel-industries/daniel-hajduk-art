@@ -123,6 +123,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .showcase li.flip .show-cap { text-align: right; justify-self: end; }
 .band-more { margin-top: clamp(4rem, 8vw, 6rem); text-align: center; }
 
+/* ── The hang: moments, not a grid ─────────────────────────
+   Each moment roughly fills one screen, so the visitor meets one
+   decision at a time: a work alone, or two that belong together. */
+.intro { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem 4rem; padding: clamp(3rem, 8vw, 7rem) var(--gutter) 0; }
+.intro .hero-line { margin-top: 0; }
+.intro .hero-links { margin-top: 1.2rem; }
+.intro-side { max-width: 26rem; }
+.hang { padding: 0 var(--gutter) clamp(4rem, 10vw, 8rem); }
+.moment { display: flex; align-items: flex-end; gap: clamp(2.5rem, 6vw, 7rem); margin-top: clamp(7rem, 20svh, 14rem); }
+.moment:first-child { margin-top: clamp(4rem, 10svh, 7rem); }
+.moment.solo.align-start { justify-content: flex-start; }
+.moment.solo.align-center { justify-content: center; }
+.moment.solo.align-end { justify-content: flex-end; }
+.moment.pair { justify-content: center; }
+.piece { display: flex; flex-direction: column; min-width: 0; }
+.piece-img { display: block; }
+.piece-img img { height: var(--h); width: auto; max-width: var(--maxw); object-fit: contain; }
+.solo.size-xl .piece { --h: min(84svh, 64rem); --maxw: min(88vw, 92rem); }
+.solo.size-l .piece { --h: min(74svh, 56rem); --maxw: min(78vw, 80rem); }
+.solo.size-m .piece { --h: min(58svh, 44rem); --maxw: min(58vw, 60rem); }
+.pair .piece { --h: min(60svh, 46rem); --maxw: 40vw; }
+.pair .piece.wide { --maxw: 46vw; }
+.pair.offset .piece:last-child { margin-bottom: clamp(4rem, 14svh, 10rem); --h: min(46svh, 36rem); }
+.piece figcaption { display: grid; gap: 0.1rem; margin-top: 0.9rem; font-size: 0.88rem; }
+.piece figcaption a { font-weight: 500; }
+.piece figcaption span { color: var(--soft); font-size: 0.82rem; }
+.piece figcaption span.sale { color: #1f8a4c; }
+.align-end .piece figcaption { text-align: right; }
+
 /* ── Works pages ────────────────────────────────────────── */
 .page-head { padding: clamp(3rem, 7vw, 6rem) var(--gutter) clamp(2rem, 4vw, 3rem); display: grid; gap: 1.2rem; }
 .page-title { font-size: clamp(2.4rem, 5.6vw, 5rem); font-weight: 760; line-height: 0.92; }
@@ -205,6 +234,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   .work-top { grid-template-columns: 1fr; }
   .work-caption { position: static; }
   .work-text, .page-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 48rem) {
+  .moment, .moment.pair { flex-direction: column; align-items: stretch; gap: 2.5rem; margin-top: clamp(5rem, 14svh, 8rem); }
+  .piece, .pair .piece, .solo .piece { --maxw: 100%; }
+  .piece-img img { height: auto; width: 100%; max-height: 78svh; object-fit: contain; object-position: left bottom; }
+  .solo.size-m .piece { width: 82%; }
+  .solo.size-m.align-end .piece { align-self: flex-end; }
+  .solo.size-m.align-center .piece { align-self: center; }
+  .pair .piece:first-child { width: 86%; }
+  .pair .piece:last-child { width: 70%; align-self: flex-end; margin-bottom: 0; }
+  .pair.offset .piece:last-child { margin-bottom: 0; }
+  .pair .piece.wide, .pair .piece.wide:first-child, .pair .piece.wide:last-child { width: 100%; }
+  .align-end .piece figcaption { text-align: left; }
+  .pair .piece:last-child figcaption { text-align: right; }
 }
 @media (max-width: 40rem) {
   :root { --header: 3.75rem; }
