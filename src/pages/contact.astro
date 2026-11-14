@@ -1,0 +1,46 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import { SITE, AVAILABILITY_LABEL } from '../data/site';
+import { getWorks } from '../lib/works';
+import { workUrl, formatPrice } from '../lib/url';
+
+const available = (await getWorks()).filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
+---
+<Base title="Contact" current="contact" description="Contact Daniel Hajduk and see works currently available for acquisition.">
+  <header class="wrap page-head">
+    <h1 style="--chars:7">Contact</h1>
+    <p>Enquiries about works, commissions and exhibitions.</p>
+  </header>
+  <section class="wrap" style="padding-bottom:clamp(3rem,6vw,5rem)">
+    <div class="split">
+      <div class="side">
+        <dl class="facts">
+          <dt>Studio</dt><dd>{SITE.location}</dd>
+          <dt>E-mail</dt>
+          <dd>{SITE.email ? <a href={`mailto:${SITE.email}`}>{SITE.email}</a> : <span class="todo">To confirm: public e-mail address</span>}</dd>
+          {SITE.social.map((s) => <><dt>{s.label}</dt><dd><a href={s.url} rel="me noopener">{s.url.replace(/^https?:\/\//, '')}</a></dd></>)}
+        </dl>
+      </div>
+      <div class="main">
+        <div class="section-head" style="margin-top:0"><h2>Available works</h2></div>
+        {available.length > 0 ? (
+          <ul class="available-list">
+            {available.map((w) => (
+              <li>
+                <a href={workUrl(w.data.category, w.id)} tabindex="-1" aria-hidden="true"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[200]} sizes="6rem" formats={['avif', 'webp']} /></a>
+                <div>
+                  <h3><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a></h3>
+                  <p class="meta">
+                    {w.data.edition?.available.length ? `Copies ${w.data.edition.available.join(', ')}` : AVAILABILITY_LABEL[w.data.availability]}
+                  </p>
+                </div>
+                <p class="price-cell">{w.data.price ? formatPrice(w.data.price.amount, w.data.price.currency) : AVAILABILITY_LABEL[w.data.availability]}</p>
+              </li>
+            ))}
+          </ul>
+        ) : <p class="empty">No works are listed as available at the moment.</p>}
+      </div>
+    </div>
+  </section>
+</Base>

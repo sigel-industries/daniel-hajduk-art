@@ -1,0 +1,10 @@
+---
+import Base from '../../layouts/Base.astro';
+import WorksIndex from '../../components/WorksIndex.astro';
+import { getWorks } from '../../lib/works';
+
+const works = await getWorks();
+---
+<Base title="Works" current="works" description="Paintings, sculptures, photography and other works by Daniel Hajduk.">
+  <WorksIndex works={works} title="Works" />
+</Base>

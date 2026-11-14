@@ -1,0 +1,31 @@
+---
+import Room from './Room.astro';
+import { CATEGORIES } from '../data/site';
+import { url } from '../lib/url';
+import { t } from '../i18n/ui';
+import type { Work } from '../lib/works';
+
+interface Props { works: Work[]; title: string; intro?: string; active?: string }
+const { works, title, intro, active } = Astro.props;
+const activeCat = CATEGORIES.find((c) => c.id === active);
+---
+<header class="wrap page-head">
+  <h1 style={`--chars:${title.length}`}>{title}</h1>
+  {intro && <p>{intro}</p>}
+  <nav aria-label="Categories">
+    <ul class="filters">
+      <li><a href={url('/works/')} aria-current={!active ? 'page' : undefined}>{t('works.all')}</a></li>
+      {CATEGORIES.map((c) => <li><a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a></li>)}
+    </ul>
+  </nav>
+</header>
+
+{works.map((w, i) => <Room work={w} flip={i % 2 === 1} />)}
+
+{works.length === 0 && activeCat && (
+  <section class="wrap room void" aria-label={`${activeCat.label}, in preparation`}>
+    <p class="void-word" aria-hidden="true">{activeCat.label}</p>
+    <p class="void-note">{t('works.empty')}</p>
+  </section>
+)}
+<div style="height:clamp(3rem,6vw,5rem)"></div>

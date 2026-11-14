@@ -1,0 +1,19 @@
+---
+import { Picture } from 'astro:assets';
+import type { Work } from '../lib/works';
+import { workUrl } from '../lib/url';
+import { AVAILABILITY_LABEL, CATEGORIES } from '../data/site';
+
+interface Props { work: Work; eager?: boolean }
+const { work, eager = false } = Astro.props;
+const d = work.data;
+const category = CATEGORIES.find((c) => c.id === d.category)?.label;
+const meta = [category, d.year, AVAILABILITY_LABEL[d.availability]].filter(Boolean).join(', ');
+---
+<a class="work-card" href={workUrl(d.category, work.id)}>
+  <div class="frame">
+    <Picture src={d.cover} alt={d.coverAlt} widths={[480, 800, 1100]} sizes="(max-width: 36rem) 92vw, (max-width: 60rem) 46vw, 34vw" formats={['avif', 'webp']} loading={eager ? 'eager' : 'lazy'} />
+  </div>
+  <h3>{d.title}</h3>
+  <p class="meta">{meta}</p>
+</a>

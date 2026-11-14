@@ -1,0 +1,125 @@
+---
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
+import type { ImageMetadata } from 'astro';
+import { SITE } from '../data/site';
+import { t, type Lang } from '../i18n/ui';
+import { url } from '../lib/url';
+import defaultOg from '../content/works/angel/angel-hero.jpg';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: ImageMetadata;
+  imageAlt?: string;
+  lang?: Lang;
+  current?: 'works' | 'about' | 'contact' | 'home';
+  jsonLd?: Record<string, unknown>;
+}
+
+const { title, description = SITE.description, image = defaultOg, imageAlt = 'ANGEL by Daniel Hajduk', lang = 'en', current = 'home', jsonLd } = Astro.props;
+const pageTitle = title ? `${title} | ${SITE.title}` : SITE.title;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const og = await getImage({ src: image, width: 1200, format: 'jpg' });
+const ogUrl = new URL(og.src, Astro.site);
+
+const nav = [
+  { key: 'works', href: url('/works/'), label: t('nav.works', lang) },
+  { key: 'about', href: url('/about/'), label: t('nav.about', lang) },
+  { key: 'contact', href: url('/contact/'), label: t('nav.contact', lang) },
+] as const;
+
+const personLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: SITE.name,
+  jobTitle: SITE.role,
+  url: new URL(url('/'), Astro.site).href,
+};
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <link rel="sitemap" href={url('/sitemap-index.xml')} />
+    <meta name="theme-color" content="#15181d" />
+    <ClientRouter />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE.title} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogUrl.href} />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta property="og:locale" content={lang === 'cs' ? 'cs_CZ' : 'en_GB'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd ?? personLd)} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{t('nav.skip', lang)}</a>
+    <header class="wrap site-header">
+      <a class="site-mark" href={url('/')} aria-label={`${SITE.name}, home`}>{SITE.name.toUpperCase()} <span>| {SITE.role.toUpperCase()}</span></a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          {nav.map((n) => (
+            <li><a href={n.href} aria-current={current === n.key ? 'page' : undefined}>{n.label}</a></li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="wrap site-footer">
+      <p>© {new Date().getFullYear()} {SITE.name}. {t('footer.rights', lang)}.</p>
+      <p>
+        {SITE.email && <a href={`mailto:${SITE.email}`}>{SITE.email}</a>}
+        {SITE.social.map((s) => <> <a href={s.url} rel="me noopener">{s.label}</a></>)}
+        {!SITE.email && SITE.social.length === 0 && <span>{SITE.location}</span>}
+      </p>
+    </footer>
+    <script>
+      // One motion system for the whole site: image reveal on entry + subtle parallax.
+      function initMotion() {
+        const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reveals = document.querySelectorAll<HTMLElement>('[data-reveal]');
+        if (still || !('IntersectionObserver' in window)) {
+          reveals.forEach((el) => el.classList.add('is-in'));
+          return;
+        }
+        document.documentElement.classList.add('motion');
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -12% 0px' });
+        reveals.forEach((el) => io.observe(el));
+
+        const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-parallax]'));
+        if (!layers.length) return;
+        let ticking = false;
+        const update = () => {
+          const vh = window.innerHeight;
+          for (const el of layers) {
+            const r = el.getBoundingClientRect();
+            if (r.bottom < -200 || r.top > vh + 200) continue;
+            const k = parseFloat(el.dataset.parallax || '0');
+            const offset = (r.top + r.height / 2 - vh / 2) * k;
+            el.style.translate = `0 ${offset.toFixed(1)}px`;
+          }
+          ticking = false;
+        };
+        const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll);
+        document.addEventListener('astro:before-swap', () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); }, { once: true });
+        update();
+      }
+      document.addEventListener('astro:page-load', initMotion);
+    </script>
+  </body>
+</html>

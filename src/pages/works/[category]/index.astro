@@ -1,0 +1,16 @@
+---
+import Base from '../../../layouts/Base.astro';
+import WorksIndex from '../../../components/WorksIndex.astro';
+import { CATEGORIES } from '../../../data/site';
+import { getWorks } from '../../../lib/works';
+
+export function getStaticPaths() {
+  return CATEGORIES.map((c) => ({ params: { category: c.id }, props: { category: c } }));
+}
+
+const { category } = Astro.props;
+const works = (await getWorks()).filter((w) => w.data.category === category.id);
+---
+<Base title={category.label} current="works" description={`${category.label} by Daniel Hajduk. ${category.intro}`}>
+  <WorksIndex works={works} title={category.label} intro={category.intro} active={category.id} />
+</Base>

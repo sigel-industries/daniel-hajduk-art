@@ -1,0 +1,97 @@
+---
+import { Picture, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { t } from '../i18n/ui';
+
+interface Props { images: { src: ImageMetadata; alt: string }[]; title: string }
+const { images, title } = Astro.props;
+const large = await Promise.all(images.map((i) => getImage({ src: i.src, width: 2000, format: 'webp' })));
+const [first, ...rest] = images;
+---
+<div class="work-gallery" data-gallery>
+  {first && (
+    <button class="gallery-item" type="button" data-index="0" data-full={large[0].src} data-alt={first.alt} aria-label={`${t('gallery.open')}: ${first.alt}`}>
+      <Picture src={first.src} alt={first.alt} widths={[640, 1000, 1400]} sizes="(max-width: 60rem) 92vw, 56vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+    </button>
+  )}
+  {rest.length > 0 && (
+    <div class="thumbs">
+      {rest.map((img, i) => (
+        <button class="gallery-item" type="button" data-index={i + 1} data-full={large[i + 1].src} data-alt={img.alt} aria-label={`${t('gallery.open')}: ${img.alt}`}>
+          <Picture src={img.src} alt={img.alt} widths={[240, 420]} sizes="(max-width: 36rem) 30vw, 14vw" formats={['avif', 'webp']} />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
+
+<dialog class="lightbox" aria-label={`${title}, ${t('work.photos').toLowerCase()}`} data-lightbox>
+  <div class="lightbox-bar">
+    <span class="lightbox-count" aria-live="polite" data-count></span>
+    <button class="lb-btn" type="button" data-close aria-label={t('gallery.close')}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg>
+    </button>
+  </div>
+  <div class="lightbox-stage">
+    <button class="lb-btn lb-prev" type="button" data-prev aria-label={t('gallery.prev')}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
+    </button>
+    <img data-image alt="" />
+    <button class="lb-btn lb-next" type="button" data-next aria-label={t('gallery.next')}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 4l8 8-8 8" /></svg>
+    </button>
+  </div>
+</dialog>
+
+<script>
+  function initGallery() {
+    const gallery = document.querySelector<HTMLElement>('[data-gallery]');
+    const box = document.querySelector<HTMLDialogElement>('[data-lightbox]');
+    if (!gallery || !box) return;
+    const items = Array.from(gallery.querySelectorAll<HTMLButtonElement>('.gallery-item'));
+    const img = box.querySelector<HTMLImageElement>('[data-image]')!;
+    const count = box.querySelector<HTMLElement>('[data-count]')!;
+    const prev = box.querySelector<HTMLButtonElement>('[data-prev]')!;
+    const next = box.querySelector<HTMLButtonElement>('[data-next]')!;
+    let index = 0;
+    let opener: HTMLElement | null = null;
+
+    const show = (i: number) => {
+      index = (i + items.length) % items.length;
+      const it = items[index];
+      img.src = it.dataset.full!;
+      img.alt = it.dataset.alt ?? '';
+      count.textContent = `${index + 1} / ${items.length}`;
+    };
+    const single = items.length < 2;
+    prev.hidden = single;
+    next.hidden = single;
+
+    items.forEach((it, i) =>
+      it.addEventListener('click', () => {
+        opener = it;
+        show(i);
+        box.showModal();
+        box.querySelector<HTMLButtonElement>('[data-close]')!.focus();
+      }),
+    );
+    box.querySelector('[data-close]')!.addEventListener('click', () => box.close());
+    prev.addEventListener('click', () => show(index - 1));
+    next.addEventListener('click', () => show(index + 1));
+    box.addEventListener('close', () => opener?.focus());
+    box.addEventListener('click', (e) => { if (e.target === box) box.close(); });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(index - 1);
+      if (e.key === 'ArrowRight') show(index + 1);
+    });
+    let x0: number | null = null;
+    img.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+    img.addEventListener('pointerup', (e) => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0;
+      if (Math.abs(dx) > 40) show(index + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
+  }
+  document.addEventListener('astro:page-load', initGallery);
+</script>

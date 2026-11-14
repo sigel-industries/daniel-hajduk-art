@@ -1,0 +1,35 @@
+---
+import { Picture } from 'astro:assets';
+import type { Work } from '../lib/works';
+import { workUrl, formatPrice } from '../lib/url';
+import { AVAILABILITY_LABEL, CATEGORIES } from '../data/site';
+
+interface Props { work: Work; flip?: boolean; headingLevel?: 'h2' | 'h3' }
+const { work, flip = false, headingLevel = 'h2' } = Astro.props;
+const d = work.data;
+const href = workUrl(d.category, work.id);
+const category = CATEGORIES.find((c) => c.id === d.category)?.label;
+const kind = [category, d.year, d.edition && `Edition of ${d.edition.size}`].filter(Boolean).join(', ');
+const H = headingLevel;
+---
+<section class:list={['wrap room', { flip }]} aria-label={d.title}>
+  <div class="room-media">
+    <a href={href} class="frame" tabindex="-1" aria-hidden="true" style="display:block">
+      <div data-reveal data-parallax="0.06">
+        <Picture src={d.cover} alt={d.coverAlt} widths={[640, 1000, 1500]} sizes="(max-width: 60rem) 92vw, 58vw" formats={['avif', 'webp']} />
+      </div>
+    </a>
+  </div>
+  <div class="room-text">
+    <p class="room-kind">{kind}</p>
+    <H class="room-title"><a href={href}>{d.title}</a></H>
+    {d.summary && <p class="room-summary">{d.summary}</p>}
+    <dl class="facts">
+      {d.dimensions && <><dt>Dimensions</dt><dd>{d.dimensions}</dd></>}
+      {d.technique && <><dt>Technique</dt><dd>{d.technique}</dd></>}
+      <dt>Status</dt><dd><span class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}{d.edition?.available.length && d.availability === 'available' ? `, copies ${d.edition.available.join(' and ')}` : ''}</span></dd>
+      {d.price && d.availability === 'available' && <><dt>Price</dt><dd>{formatPrice(d.price.amount, d.price.currency)}{d.price.note ? ` ${d.price.note}` : ''}</dd></>}
+    </dl>
+    <a class="button ghost" href={href}>View the work</a>
+  </div>
+</section>

@@ -1,0 +1,74 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Room from '../components/Room.astro';
+import { SITE, CATEGORIES } from '../data/site';
+import { getWorks, getSelectedWorks } from '../lib/works';
+import { url, workUrl } from '../lib/url';
+
+const works = await getWorks();
+const selected = await getSelectedWorks();
+const featured = selected[0] ?? works[0];
+const counts = Object.fromEntries(CATEGORIES.map((c) => [c.id, works.filter((w) => w.data.category === c.id).length]));
+const [first, last] = SITE.name.toUpperCase().split(' ');
+---
+<Base current="home">
+  <section class="hero" aria-labelledby="hero-title">
+    <h1 class="visually-hidden" id="hero-title">{SITE.name}, artist</h1>
+    <p class="hero-name fill" aria-hidden="true">
+      <span class="line"><span>{first}</span></span>
+      <span class="line"><span>{last}</span></span>
+    </p>
+
+    {featured && (
+      <figure class="hero-figure" data-parallax="-0.08">
+        <a href={workUrl(featured.data.category, featured.id)} aria-label={`${featured.data.title}, view the work`}>
+          <Picture src={featured.data.cover} alt={featured.data.coverAlt} widths={[520, 820, 1200]} sizes="(max-width: 60rem) 82vw, 34vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+        </a>
+      </figure>
+    )}
+
+    <p class="hero-name outline" aria-hidden="true">
+      <span class="line"><span>{first}</span></span>
+      <span class="line"><span>{last}</span></span>
+    </p>
+
+    <div class="hero-foot">
+      <div>
+        <p class="hero-role">Painting, sculpture and other visual work.</p>
+        <ul class="hero-index">
+          {CATEGORIES.map((c) => <li><a href={url(`/works/${c.id}/`)}>{c.label}</a></li>)}
+        </ul>
+      </div>
+      {featured && (
+        <p class="hero-label"><strong>{featured.data.title}</strong>{featured.data.edition ? `Limited edition of ${featured.data.edition.size}` : featured.data.technique}</p>
+      )}
+    </div>
+  </section>
+
+  <div class="wrap rooms-intro">
+    <h2>Selected works</h2>
+    <p>Each work is shown in its own room. The collection grows as new paintings, sculptures and photographs are documented.</p>
+  </div>
+
+  {selected.map((w, i) => <Room work={w} flip={i % 2 === 1} />)}
+
+  <section class="wrap statement" aria-label="About the artist">
+    <blockquote>Daniel Hajduk works across painting, sculpture and other visual techniques. His paintings have found collectors at home and abroad.</blockquote>
+    <p class="by"><a href={url('/about/')}>About the artist</a></p>
+  </section>
+
+  <section class="wrap" style="padding-block:clamp(4rem,8vw,7rem)" aria-labelledby="index-title">
+    <h2 class="section-title" id="index-title">Index</h2>
+    <ul class="disciplines">
+      {CATEGORIES.map((c) => (
+        <li><a href={url(`/works/${c.id}/`)}><span class="name">{c.label}</span><span class="count">{counts[c.id] === 1 ? '1 work' : counts[c.id] ? `${counts[c.id]} works` : 'In preparation'}</span></a></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="wrap contact-band" aria-labelledby="contact-title">
+    <h2 id="contact-title"><a href={url('/contact/')}>Enquiries</a></h2>
+    <p>Works, commissions and collaborations. Available works are listed on the contact page.</p>
+  </section>
+</Base>
