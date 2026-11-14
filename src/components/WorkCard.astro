@@ -1,0 +1,29 @@
+---
+import { Picture } from 'astro:assets';
+import type { Work } from '../lib/works';
+import { CATEGORIES, AVAILABILITY_LABEL } from '../data/site';
+import { workUrl, formatPrice } from '../lib/url';
+
+interface Props { work: Work; eager?: boolean; sizes?: string }
+const { work, eager = false, sizes = '(max-width: 40rem) 100vw, (max-width: 70rem) 50vw, 33vw' } = Astro.props;
+const d = work.data;
+const cat = CATEGORIES.find((c) => c.id === d.category)!;
+const meta = [cat.singular, d.year, d.dimensions].filter(Boolean).join(', ');
+const forSale = d.availability === 'available';
+---
+<article class="card" data-category={d.category} data-available={forSale ? '' : undefined}>
+  <a href={workUrl(d.category, work.id)} class="card-link">
+    <span class="card-img">
+      <Picture src={d.cover} alt={d.coverAlt} widths={[480, 800, 1200]} sizes={sizes} formats={['avif', 'webp']} loading={eager ? 'eager' : 'lazy'} />
+    </span>
+    <span class="card-cap">
+      <span class="card-title">{d.title}</span>
+      <span class="card-meta">{meta}</span>
+      {d.availability && (
+        <span class:list={['card-status', { sale: forSale }]}>
+          {AVAILABILITY_LABEL[d.availability]}{forSale && d.price && `, ${formatPrice(d.price.amount, d.price.currency)}`}
+        </span>
+      )}
+    </span>
+  </a>
+</article>

@@ -43,7 +43,7 @@ details:
   - src: ./angel/angel-detail-base.jpg
     alt: Detail of ANGEL, the slender leg growing out of the base
 selected: true
-order: 1
+order: 5
 summary: A fragmented figure with a single wing. Limited, numbered edition of 50, signed by the artist.
 ---
 

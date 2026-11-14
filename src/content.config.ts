@@ -30,7 +30,7 @@ const works = defineCollection({
           available: z.array(z.string()).default([]),
         })
         .optional(),
-      availability: z.enum(['available', 'sold', 'private-collection', 'on-request']),
+      availability: z.enum(['available', 'sold', 'private-collection', 'on-request']).optional(),
       price: z
         .object({
           amount: z.number().positive(),

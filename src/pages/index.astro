@@ -1,12 +1,72 @@
 ---
+import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Wall from '../components/Wall.astro';
+import WorkCard from '../components/WorkCard.astro';
+import { SITE } from '../data/site';
 import { getWorks, getSelectedWorks } from '../lib/works';
+import { url, workUrl, formatPrice } from '../lib/url';
 
-// The wall shows the selected works; if none are marked, every work.
-const chosen = await getSelectedWorks();
-const works = chosen.length ? chosen : await getWorks();
+const works = await getWorks();
+const selected = await getSelectedWorks();
+const paintings = works.filter((w) => w.data.category === 'paintings');
+// opening image: the first selected painting
+const lead = selected.find((w) => w.data.category === 'paintings') ?? works[0];
+const available = works.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
+const recent = works.filter((w) => w.id !== lead.id).slice(0, 9);
 ---
 <Base current="home">
-  <Wall works={works} />
+  <section class="hero" aria-labelledby="hero-name">
+    <div class="hero-text">
+      <h1 class="hero-name" id="hero-name"><span>Daniel</span><span>Hajduk</span></h1>
+      <p class="hero-line">Painting, sculpture, photography and other visual work. {SITE.location}.</p>
+      <p class="hero-links">
+        <a class="btn" href={url('/works/')}>View all works</a>
+        {available.length > 0 && <a class="btn ghost" href={url('/available/')}>Available works</a>}
+      </p>
+    </div>
+    <a class="hero-work" href={workUrl(lead.data.category, lead.id)}>
+      <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600]} sizes="(max-width: 60rem) 100vw, 55vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+      <span class="hero-cap">{lead.data.title}</span>
+    </a>
+  </section>
+
+  <section class="band" aria-labelledby="recent-title">
+    <div class="band-head">
+      <h2 class="section-title" id="recent-title">Works</h2>
+      <p>{paintings.length} paintings and other works, newest first. <a href={url('/works/')}>See the full collection</a></p>
+    </div>
+    <div class="grid">
+      {recent.map((w) => <WorkCard work={w} />)}
+    </div>
+    <p class="band-more"><a class="btn ghost" href={url('/works/')}>All {works.length} works</a></p>
+  </section>
+
+  {available.length > 0 && (
+    <section class="band available-band" aria-labelledby="available-title">
+      <div class="band-head">
+        <h2 class="section-title" id="available-title">Available now</h2>
+        <p>Works that can be acquired today.</p>
+      </div>
+      <ul class="offer">
+        {available.map((w) => (
+          <li>
+            <a href={workUrl(w.data.category, w.id)} class="offer-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[500, 900]} sizes="(max-width: 60rem) 100vw, 40vw" formats={['avif', 'webp']} /></a>
+            <div class="offer-text">
+              <h3><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a></h3>
+              <p>{[w.data.technique, w.data.dimensions].filter(Boolean).join(', ')}</p>
+              {w.data.edition && <p>Limited edition of {w.data.edition.size}{w.data.edition.available.length ? `, copies ${w.data.edition.available.join(' and ')} available` : ''}</p>}
+              {w.data.price && <p class="offer-price">{formatPrice(w.data.price.amount, w.data.price.currency)}{w.data.price.note && <span> {w.data.price.note}</span>}</p>}
+              <a class="btn" href={workUrl(w.data.category, w.id)}>View details</a>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <section class="band about-band" aria-labelledby="about-title">
+    <h2 class="visually-hidden" id="about-title">About</h2>
+    <p class="statement">Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
+    <p class="hero-links"><a class="btn ghost" href={url('/about/')}>About the artist</a> <a class="btn ghost" href={url('/contact/')}>Contact</a></p>
+  </section>
 </Base>

@@ -1,88 +1,30 @@
 ---
 /**
- * THE CATALOGUE
- * The professional way through the work, in the same world as the wall:
- * a line-up of every work standing side by side at true relative scale,
- * then a precise list. Hovering a work lends the page its wall colour.
- * Only disciplines that contain works are offered as filters.
+ * The full collection as a gallery grid, newest first.
+ * Filters: all, each discipline that has works, and works available now.
  */
-import { Picture } from 'astro:assets';
-import { CATEGORIES, AVAILABILITY_LABEL, type CategoryId } from '../data/site';
-import { url, workUrl } from '../lib/url';
-import { hang } from '../lib/hang';
-import { workGround } from '../lib/ground';
+import WorkCard from './WorkCard.astro';
+import { CATEGORIES, type CategoryId } from '../data/site';
+import { url } from '../lib/url';
 import type { Work } from '../lib/works';
 
-interface Props { works: Work[]; all: Work[]; active?: CategoryId }
-const { works, all, active } = Astro.props;
+interface Props { works: Work[]; all: Work[]; active?: CategoryId; title?: string; intro?: string }
+const { works, all, active, title = 'Works', intro } = Astro.props;
 const present = CATEGORIES.filter((c) => all.some((w) => w.data.category === c.id));
-const rows = await Promise.all(works.map(async (w) => ({ w, h: hang(w), g: await workGround(w), no: all.indexOf(w) + 1 })));
-const title = active ? CATEGORIES.find((c) => c.id === active)!.label : 'Catalogue';
-const n = (v: number) => v.toFixed(2);
+const anyAvailable = all.some((w) => w.data.availability === 'available');
 ---
-<header class="cat-head">
-  <h1 class="cat-title">{title}</h1>
-  <div class="cat-meta">
-    <p>{works.length === 1 ? 'One work' : `${works.length} works`}. Shown side by side at true relative scale.</p>
-    {present.length > 0 && (
-      <nav aria-label="Disciplines">
-        <ul class="cat-filters">
-          <li><a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a></li>
-          {present.map((c) => <li><a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a></li>)}
-        </ul>
-      </nav>
-    )}
-  </div>
+<header class="page-head">
+  <h1 class="page-title">{title}</h1>
+  <p class="page-intro">{intro ?? `${works.length} works. Earlier work and pieces available now.`}</p>
+  <nav class="filters" aria-label="Filter works">
+    <a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a>
+    {present.map((c) => <a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a>)}
+    {anyAvailable && <a href={url('/available/')}>Available</a>}
+  </nav>
 </header>
 
-<div class="lineup" aria-label="Works at relative scale">
-  <div class="lineup-scale" aria-hidden="true"><span>200 cm</span><span>100</span><span>0</span></div>
-  <ol class="lineup-row">
-    {rows.map(({ w, h, g, no }) => (
-      <li style={`--w:${n(h.w)};--h:${n(h.h)}`}>
-        <a href={workUrl(w.data.category, w.id)} data-ground={g.ground} data-ink={g.ink} tabindex="-1" aria-hidden="true">
-          <span class="lineup-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[300, 600, 900]} sizes="20vw" formats={['avif', 'webp']} /></span>
-          <span class="lineup-no">{no}</span>
-        </a>
-      </li>
-    ))}
-  </ol>
-</div>
-
-<div class="cat-list-wrap">
-  <table class="cat-list">
-    <thead>
-      <tr><th scope="col">No.</th><th scope="col">Work</th><th scope="col">Discipline</th><th scope="col">Medium</th><th scope="col">Dimensions</th><th scope="col">Series</th><th scope="col">Year</th><th scope="col">Status</th></tr>
-    </thead>
-    <tbody>
-      {rows.map(({ w, g, no }) => {
-        const d = w.data;
-        const cat = CATEGORIES.find((c) => c.id === d.category)!;
-        return (
-          <tr data-ground={g.ground} data-ink={g.ink}>
-            <td class="cat-no">{no}</td>
-            <th scope="row"><a href={workUrl(d.category, w.id)}>{d.title}</a></th>
-            <td data-label="Discipline">{cat.singular}</td>
-            <td data-label="Medium">{[d.technique, d.materials].filter(Boolean).join('; ')}</td>
-            <td data-label="Dimensions">{d.dimensions ?? ''}</td>
-            <td data-label="Series">{d.series ?? (d.edition ? `Edition of ${d.edition.size}` : '')}</td>
-            <td data-label="Year">{d.year ?? ''}</td>
-            <td data-label="Status"><span class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}</span></td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
-</div>
-
-<script>
-  function initCatalogue() {
-    const root = document.documentElement;
-    const base = { g: root.style.getPropertyValue('--ground'), i: root.style.getPropertyValue('--ink') };
-    document.querySelectorAll<HTMLElement>('.lineup [data-ground], .cat-list [data-ground]').forEach((el) => {
-      el.addEventListener('pointerenter', () => { root.style.setProperty('--ground', el.dataset.ground!); root.style.setProperty('--ink', el.dataset.ink!); });
-      el.addEventListener('pointerleave', () => { root.style.setProperty('--ground', base.g); root.style.setProperty('--ink', base.i); });
-    });
-  }
-  document.addEventListener('astro:page-load', initCatalogue);
-</script>
+<section class="grid-wrap" aria-label="Works">
+  <div class="grid">
+    {works.map((w, i) => <WorkCard work={w} eager={i < 3} />)}
+  </div>
+</section>

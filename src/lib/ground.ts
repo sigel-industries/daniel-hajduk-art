@@ -6,7 +6,7 @@
 import type { Work } from './works';
 import { workPalette } from './palette';
 
-export const DEFAULT_GROUND = { ground: '#d9d8d3', ink: '#1a1917' };
+export const DEFAULT_GROUND = { ground: '#ffffff', ink: '#141414' };
 
 const lum = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
