@@ -1,0 +1,130 @@
+---
+/**
+ * In-page viewer: clicking a work on the home page or in the archive opens it
+ * large on the same page instead of navigating away.
+ * Any link with [data-viewer-item] takes part; its data attributes carry the large
+ * image and the facts. Arrows / swipe move through the works currently visible
+ * (so archive filters are respected). The URL gets ?work=<id> so a view can be
+ * shared or reloaded; the work's own page stays available via "Details".
+ * Without JavaScript, the links simply open the work's page.
+ */
+---
+<dialog class="viewer" data-viewer aria-label="Work">
+  <div class="viewer-bar">
+    <span class="viewer-count" data-v-count></span>
+    <button type="button" class="lb-btn" data-v-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" /></svg>
+    </button>
+  </div>
+  <div class="viewer-body">
+    <button type="button" class="lb-btn viewer-prev" data-v-prev aria-label="Previous work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M15 4l-8 8 8 8" /></svg>
+    </button>
+    <figure class="viewer-figure">
+      <div class="viewer-img" data-v-frame><img data-v-img alt="" /></div>
+      <figcaption class="viewer-cap">
+        <p class="viewer-title" data-v-title></p>
+        <p class="viewer-meta" data-v-meta></p>
+        <p class="viewer-status" data-v-status></p>
+        <a class="viewer-link" data-v-link href="#">Details and enquiry</a>
+      </figcaption>
+    </figure>
+    <button type="button" class="lb-btn viewer-next" data-v-next aria-label="Next work">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 4l8 8-8 8" /></svg>
+    </button>
+  </div>
+</dialog>
+
+<script>
+  function initViewer() {
+    const box = document.querySelector<HTMLDialogElement>('[data-viewer]');
+    if (!box) return;
+    const $ = <T extends HTMLElement>(s: string) => box.querySelector<T>(s)!;
+    const img = $<HTMLImageElement>('[data-v-img]');
+    const frame = $('[data-v-frame]');
+    const title = $('[data-v-title]'), meta = $('[data-v-meta]'), status = $('[data-v-status]'), count = $('[data-v-count]');
+    const link = $<HTMLAnchorElement>('[data-v-link]');
+    const prev = $<HTMLButtonElement>('[data-v-prev]'), next = $<HTMLButtonElement>('[data-v-next]');
+    let items: HTMLAnchorElement[] = [];
+    let index = 0;
+    let opener: HTMLElement | null = null;
+
+    // one entry per work, in page order, only those currently visible
+    const collect = () => {
+      const seen = new Set<string>();
+      return Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-viewer-item]')).filter((a) => {
+        if (a.closest('[hidden]') || seen.has(a.dataset.id!)) return false;
+        seen.add(a.dataset.id!);
+        return true;
+      });
+    };
+    const setUrl = (id: string | null) => {
+      const u = new URL(location.href);
+      id ? u.searchParams.set('work', id) : u.searchParams.delete('work');
+      history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+    };
+    const show = (i: number) => {
+      index = (i + items.length) % items.length;
+      const a = items[index];
+      frame.style.setProperty('--tone', a.dataset.tone || '#dedbd5');
+      frame.style.setProperty('--r', a.dataset.r || '1');
+      img.classList.remove('is-loaded');
+      img.onload = () => img.classList.add('is-loaded');
+      img.src = a.dataset.full!;
+      img.alt = a.dataset.alt || '';
+      title.textContent = a.dataset.title || '';
+      meta.textContent = a.dataset.meta || '';
+      status.textContent = a.dataset.status || '';
+      status.hidden = !a.dataset.status;
+      link.href = a.href;
+      const single = items.length < 2;
+      prev.hidden = next.hidden = count.hidden = single;
+      count.textContent = `${index + 1} / ${items.length}`;
+      setUrl(a.dataset.id!);
+      // warm the neighbours so moving on is instant
+      [index - 1, index + 1].forEach((j) => { const n = items[(j + items.length) % items.length]; if (n) new Image().src = n.dataset.full!; });
+    };
+    const open = (a: HTMLAnchorElement) => {
+      items = collect();
+      opener = a;
+      show(Math.max(0, items.findIndex((x) => x.dataset.id === a.dataset.id)));
+      if (!box.open) box.showModal();
+      document.documentElement.classList.add('viewer-open');
+    };
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-viewer-item]').forEach((a) =>
+      a.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // let "open in new tab" work
+        e.preventDefault();
+        open(a);
+      }),
+    );
+    $('[data-v-close]').addEventListener('click', () => box.close());
+    prev.addEventListener('click', () => show(index - 1));
+    next.addEventListener('click', () => show(index + 1));
+    box.addEventListener('click', (e) => { if (e.target === box || (e.target as HTMLElement).classList.contains('viewer-body')) box.close(); });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') show(index - 1);
+      if (e.key === 'ArrowRight') show(index + 1);
+    });
+    box.addEventListener('close', () => {
+      document.documentElement.classList.remove('viewer-open');
+      setUrl(null);
+      if (opener) { opener.focus({ preventScroll: true }); opener.scrollIntoView({ block: 'nearest' }); }
+    });
+    let x0: number | null = null;
+    frame.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+    frame.addEventListener('pointerup', (e) => {
+      if (x0 === null) return;
+      const dx = e.clientX - x0;
+      if (Math.abs(dx) > 40 && items.length > 1) show(index + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
+
+    // opened from a shared link: ?work=<id>
+    const id = new URLSearchParams(location.search).get('work');
+    const start = id && document.querySelector<HTMLAnchorElement>(`[data-viewer-item][data-id="${CSS.escape(id)}"]`);
+    if (start) open(start);
+  }
+  document.addEventListener('astro:page-load', initViewer);
+</script>

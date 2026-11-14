@@ -8,12 +8,13 @@
 import { Picture } from 'astro:assets';
 import type { Work } from '../lib/works';
 import { sequence, profile } from '../lib/curation';
+import { viewerAttrs } from '../lib/viewer';
 import { CATEGORIES } from '../data/site';
 import { workUrl } from '../lib/url';
 
 interface Props { works: Work[] }
 const works = await sequence(Astro.props.works);
-const profiled = await Promise.all(works.map(async (w) => ({ w, p: await profile(w) })));
+const profiled = await Promise.all(works.map(async (w) => ({ w, p: await profile(w), v: await viewerAttrs(w) })));
 
 type Moment = { kind: 'solo' | 'pair'; items: typeof profiled };
 const moments: Moment[] = [];
@@ -28,12 +29,12 @@ const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.sin
 <div class="selected">
   {moments.map((m, mi) => (
     <section class:list={['moment', m.kind, m.kind === 'solo' && (mi % 2 ? 'cap-left' : 'cap-right')]} aria-label={m.items.map((x) => x.w.data.title).join(' and ')}>
-      {m.items.map(({ w, p }) => (
+      {m.items.map(({ w, p, v }) => (
         <figure class="m-work" style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(3)};--tone:${p.tone}`}>
-          <a href={workUrl(w.data.category, w.id)} class="m-img">
+          <a href={workUrl(w.data.category, w.id)} class="m-img" {...v}>
             <Picture src={w.data.cover} alt={w.data.coverAlt} widths={[700, 1100, 1600, 2000]} sizes={m.kind === 'solo' ? '(max-width: 48rem) 100vw, 70vw' : '(max-width: 48rem) 100vw, 40vw'} formats={['avif', 'webp']} decoding="async" />
           </a>
-          <figcaption><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a><span>{meta(w)}</span></figcaption>
+          <figcaption><a href={workUrl(w.data.category, w.id)} {...v}>{w.data.title}</a><span>{meta(w)}</span></figcaption>
         </figure>
       ))}
     </section>
