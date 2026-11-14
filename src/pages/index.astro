@@ -15,18 +15,19 @@ const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c
 <Base current="home">
   <section class="opening" aria-labelledby="hero-name">
     <div class="opening-text">
-      <h1 class="hero-name" id="hero-name">Daniel Hajduk</h1>
-      <p class="opening-line">Painting, sculpture, photography and other visual work. {SITE.location}.</p>
+      <h1 class="hero-name" id="hero-name"><span>Daniel</span> <em>Hajduk</em></h1>
+      <p class="opening-line">Painting, sculpture, photography and other visual work. Studio in {SITE.location}.</p>
+      <a class="opening-link" href="#works">{works.length} works</a>
     </div>
     <figure class="opening-work">
       <a href={workUrl(lead.data.category, lead.id)}>
-        <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600]} sizes="(max-width: 48rem) 100vw, 50vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+        <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600, 2000]} sizes="(max-width: 48rem) 100vw, 55vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
       </a>
       <figcaption>{lead.data.title}</figcaption>
     </figure>
   </section>
 
-  <section class="works-section" aria-labelledby="works-title">
+  <section class="works-section" id="works" aria-labelledby="works-title">
     <div class="works-head">
       <h2 id="works-title">Works</h2>
       <nav class="quiet-filters" aria-label="Filter works">
@@ -38,7 +39,7 @@ const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c
   </section>
 
   <section class="closing" aria-label="About">
-    <p>Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
+    <p class="closing-statement">Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
     <p class="closing-links"><a href={url('/about/')}>About the artist</a><a href={url('/contact/')}>Contact</a></p>
   </section>
 </Base>
