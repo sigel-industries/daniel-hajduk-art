@@ -1,33 +1,49 @@
 ---
+import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
 import { SITE } from '../data/site';
 import { url } from '../lib/url';
+import angel from '../content/works/angel/angel-three-quarter-crop.jpg';
 
 /*
  * Only confirmed facts are written as text.
  * Items marked with class="todo" are placeholders awaiting the artist's confirmation;
- * replace them with real content (or delete them) before publishing.
+ * they render in development only.
  */
 ---
 <Base title="About" current="about" description="About Daniel Hajduk, an artist working in painting, sculpture and other visual media.">
-  <header class="wrap page-head">
-    <h1 style="--chars:5">About</h1>
-  </header>
-  <section class="wrap" style="padding-bottom:clamp(4rem,8vw,7rem)">
-    <div class="split">
-      <div class="side">
-        <dl class="facts">
-          <dt>Name</dt><dd>{SITE.name}</dd>
-          <dt>Disciplines</dt><dd>Painting, sculpture, other visual techniques</dd>
-          <dt>Based in</dt><dd>{SITE.location}</dd>
+  <article class="about">
+    <header class="about-head" data-spot>
+      <p class="monogram" aria-hidden="true">DH</p>
+      <p class="page-room">About the artist</p>
+      <h1 class="about-statement">Daniel Hajduk is an artist working across painting, sculpture and other visual&nbsp;techniques.</h1>
+    </header>
+
+    <div class="about-body">
+      <figure class="about-figure">
+        <div class="reveal" data-reveal>
+          <div data-parallax="0.05">
+            <Picture src={angel} alt="ANGEL, a sculpture by Daniel Hajduk, seen from a three-quarter angle" widths={[480, 800, 1100]} sizes="(max-width: 60rem) 80vw, 30vw" formats={['avif', 'webp']} />
+          </div>
+        </div>
+        <figcaption><a href={url('/works/sculptures/angel/')}>ANGEL</a>, limited edition of 50</figcaption>
+      </figure>
+
+      <div class="about-text">
+        <div class="prose">
+          <p>Painting is the largest part of his work. Over the years his paintings have been acquired by collectors, including buyers abroad.</p>
+          <p>Alongside painting he develops sculptural work, such as the limited edition <a href={url('/works/sculptures/angel/')}>ANGEL</a>, and works in other visual techniques.</p>
+          {import.meta.env.DEV && <p><span class="todo">To confirm: a few sentences in the artist's own words about his approach, themes and materials.</span></p>}
+          {import.meta.env.DEV && <p><span class="todo">To confirm: education, exhibitions, collections or other biographical facts the artist wants to publish.</span></p>}
+        </div>
+
+        <dl class="wall-text">
+          <div><dt>Name</dt><dd>{SITE.name}</dd></div>
+          <div><dt>Disciplines</dt><dd>Painting, sculpture, other visual techniques</dd></div>
+          <div><dt>Studio</dt><dd>{SITE.location}</dd></div>
         </dl>
-      </div>
-      <div class="main prose">
-        <p class="lede" style="margin-bottom:1.5rem">Daniel Hajduk is an artist working across painting, sculpture and other visual techniques.</p>
-        <p>Painting is the largest part of his work. Over the years his paintings have been acquired by collectors, including buyers abroad. Alongside painting he develops sculptural work, such as the limited edition <a href={url('/works/sculptures/angel/')}>ANGEL</a>.</p>
-        {import.meta.env.DEV && <p><span class="todo">To confirm: a few sentences in the artist's own words about his approach, themes and materials.</span></p>}
-        {import.meta.env.DEV && <p><span class="todo">To confirm: education, exhibitions, collections or other biographical facts the artist wants to publish.</span></p>}
+        <a class="label-link" href={url('/works/')}>Walk through the works</a>
       </div>
     </div>
-  </section>
+  </article>
 </Base>

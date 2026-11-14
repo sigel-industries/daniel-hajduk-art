@@ -2,9 +2,10 @@
 import { render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import Gallery from '../../../components/Gallery.astro';
-import { AVAILABILITY_LABEL, CATEGORIES, SITE } from '../../../data/site';
+import WorkLabel from '../../../components/WorkLabel.astro';
+import { CATEGORIES, SITE, roomNumber } from '../../../data/site';
 import { getWorks, type Work } from '../../../lib/works';
-import { url, formatPrice } from '../../../lib/url';
+import { url } from '../../../lib/url';
 import { t } from '../../../i18n/ui';
 
 export async function getStaticPaths() {
@@ -34,34 +35,22 @@ const jsonLd = {
 };
 ---
 <Base title={d.title} description={description} image={d.cover} imageAlt={d.coverAlt} current="works" jsonLd={jsonLd}>
-  <article class="wrap work">
-    <Gallery images={images} title={d.title} />
+  <article class="work" aria-labelledby="work-title" style={`--chars:${d.title.length}`}>
+    <header class="work-head" data-spot>
+      <p class="page-room"><a href={url(`/works/${category.id}/`)}><span class="numeral">{roomNumber(category.id)}</span>{category.label}</a></p>
+      <p class="work-word" aria-hidden="true"><span class="fill">{d.title}</span><span class="outline">{d.title}</span></p>
+    </header>
 
-    <aside class="work-info" aria-labelledby="work-title">
-      <h1 id="work-title">{d.title}</h1>
-      {d.summary && <p class="summary">{d.summary}</p>}
-      <dl class="facts">
-        <dt>Category</dt><dd><a href={url(`/works/${category.id}/`)}>{category.label}</a></dd>
-        {d.year && <><dt>{t('work.year')}</dt><dd>{d.year}</dd></>}
-        {d.technique && <><dt>{t('work.technique')}</dt><dd>{d.technique}</dd></>}
-        {d.materials && <><dt>{t('work.materials')}</dt><dd>{d.materials}</dd></>}
-        {d.dimensions && <><dt>{t('work.dimensions')}</dt><dd>{d.dimensions}</dd></>}
-        {d.edition && <><dt>{t('work.edition')}</dt><dd>{t('work.editionOf')} {d.edition.size}</dd></>}
-        {d.edition && d.edition.available.length > 0 && d.availability === 'available' && <><dt>{t('work.availableCopies')}</dt><dd>{d.edition.available.join(', ')}</dd></>}
-        <dt>{t('work.status')}</dt><dd><span class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}</span></dd>
-      </dl>
-      {d.price && d.availability === 'available' && (
-        <p class="price">{formatPrice(d.price.amount, d.price.currency)} {d.price.note && <small>{d.price.note}</small>}</p>
-      )}
-      <div class="actions">
-        {d.links.map((l, i) => <a class={i === 0 ? 'button' : 'button secondary'} href={l.url} rel="noopener" target="_blank">{l.label}<span class="visually-hidden"> (opens in a new tab)</span></a>)}
-        {SITE.email && <a class="button secondary" href={`mailto:${SITE.email}?subject=${encodeURIComponent(d.title)}`}>{t('work.enquire')}</a>}
+    <Gallery images={images} title={d.title}>
+      <div class="work-label" slot="label">
+        <WorkLabel work={work} headingLevel="h1" headingId="work-title" mode="detail" />
       </div>
-      <a class="back" href={url(`/works/${category.id}/`)}>{t('work.back')} {category.label.toLowerCase()}</a>
-    </aside>
+    </Gallery>
 
-    <div class="work-text prose">
-      <Content />
+    <div class="work-text">
+      {d.summary && <p class="work-lede">{d.summary}</p>}
+      <div class="prose"><Content /></div>
+      <a class="back" href={url(`/works/${category.id}/`)}>{t('work.back')} {category.label.toLowerCase()}</a>
     </div>
   </article>
 </Base>

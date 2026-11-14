@@ -1,0 +1,58 @@
+---
+/**
+ * One work shown as an exhibition room: the title written across the wall,
+ * the work lit and bleeding off the edge of the screen, a museum label,
+ * and the remaining views hung as a horizontal wall.
+ */
+import { Picture } from 'astro:assets';
+import type { Work } from '../lib/works';
+import WorkLabel from './WorkLabel.astro';
+import { CATEGORIES, roomNumber } from '../data/site';
+import { workUrl } from '../lib/url';
+
+interface Props {
+  work: Work;
+  flip?: boolean;
+  headingLevel?: 'h2' | 'h3';
+  /** which photograph leads the room (index into images); defaults to the cover */
+  lead?: number;
+}
+const { work, flip = false, headingLevel = 'h2', lead } = Astro.props;
+const d = work.data;
+const href = workUrl(d.category, work.id);
+const category = CATEGORIES.find((c) => c.id === d.category)!;
+const headingId = `exhibit-${work.id}`;
+const all = d.images.length ? d.images : [{ src: d.cover, alt: d.coverAlt }];
+const leadImg = lead !== undefined && all[lead] ? all[lead] : { src: d.cover, alt: d.coverAlt };
+const views = all.filter((img) => img.src.src !== leadImg.src.src);
+---
+<section class:list={['exhibit', { flip }]} aria-labelledby={headingId} data-spot>
+  <p class="exhibit-room"><span class="numeral">{roomNumber(d.category)}</span>{category.label}</p>
+  <p class="exhibit-word" aria-hidden="true"><span data-drift="-0.12">{d.title}</span></p>
+
+  <div class="exhibit-stage">
+    <a class="exhibit-media" href={href} tabindex="-1" aria-hidden="true">
+      <div class="reveal" data-reveal>
+        <div data-parallax="0.05">
+          <Picture src={leadImg.src} alt={leadImg.alt} widths={[640, 1000, 1500]} sizes="(max-width: 60rem) 100vw, 50vw" formats={['avif', 'webp']} />
+        </div>
+      </div>
+    </a>
+    <WorkLabel work={work} headingLevel={headingLevel} headingId={headingId} />
+  </div>
+
+  {views.length > 0 && (
+    <div class="wall" role="region" aria-label={`${d.title}, further views`} tabindex="0">
+      <ol>
+        {views.map((img, i) => (
+          <li>
+            <a href={href}>
+              <Picture src={img.src} alt={img.alt} widths={[420, 720, 1000]} sizes="(max-width: 60rem) 70vw, 30vw" formats={['avif', 'webp']} />
+            </a>
+            <span class="wall-n" aria-hidden="true">{i + 2} / {views.length + 1}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )}
+</section>

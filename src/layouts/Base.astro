@@ -48,7 +48,7 @@ const personLd = {
     <link rel="canonical" href={canonical.href} />
     <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
-    <meta name="theme-color" content="#15181d" />
+    <meta name="theme-color" content="#111317" />
     <ClientRouter />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.title} />
@@ -64,7 +64,7 @@ const personLd = {
   <body>
     <a class="skip-link" href="#main">{t('nav.skip', lang)}</a>
     <header class="site-header">
-      <a class="site-mark" href={url('/')} aria-label={`${SITE.name}, home`}>{SITE.name.toUpperCase()} <span>| {SITE.role.toUpperCase()}</span></a>
+      <a class="site-mark" href={url('/')} aria-label={`${SITE.name}, home`}>{SITE.name}<span>{SITE.role}</span></a>
       <nav class="site-nav" aria-label="Main">
         <ul>
           {nav.map((n) => (
@@ -76,7 +76,7 @@ const personLd = {
     <main id="main">
       <slot />
     </main>
-    <footer class="wrap site-footer">
+    <footer class="site-footer">
       <p>© {new Date().getFullYear()} {SITE.name}. {t('footer.rights', lang)}.</p>
       <p>
         {SITE.email && <a href={`mailto:${SITE.email}`}>{SITE.email}</a>}
@@ -85,7 +85,9 @@ const personLd = {
       </p>
     </footer>
     <script>
-      // One motion system for the whole site: image reveal on entry + subtle parallax.
+      // One motion system for the whole site:
+      // image reveal on entry, subtle parallax, scroll-linked drift of oversized type,
+      // and a gallery spotlight that follows the pointer (fine pointers only).
       function initMotion() {
         const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const reveals = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -96,28 +98,53 @@ const personLd = {
         document.documentElement.classList.add('motion');
         const io = new IntersectionObserver((entries) => {
           entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
-        }, { rootMargin: '0px 0px -12% 0px' });
+        }, { rootMargin: '0px 0px -10% 0px' });
         reveals.forEach((el) => io.observe(el));
 
-        const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-parallax]'));
-        if (!layers.length) return;
-        let ticking = false;
-        const update = () => {
-          const vh = window.innerHeight;
-          for (const el of layers) {
-            const r = el.getBoundingClientRect();
-            if (r.bottom < -200 || r.top > vh + 200) continue;
-            const k = parseFloat(el.dataset.parallax || '0');
-            const offset = (r.top + r.height / 2 - vh / 2) * k;
-            el.style.translate = `0 ${offset.toFixed(1)}px`;
-          }
-          ticking = false;
+        const cleanup: (() => void)[] = [];
+        const on = (t: EventTarget, ev: string, fn: EventListener, opts?: AddEventListenerOptions) => {
+          t.addEventListener(ev, fn, opts);
+          cleanup.push(() => t.removeEventListener(ev, fn));
         };
-        const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll);
-        document.addEventListener('astro:before-swap', () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); }, { once: true });
-        update();
+
+        const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-parallax]'));
+        const drifts = Array.from(document.querySelectorAll<HTMLElement>('[data-drift]'));
+        if (layers.length || drifts.length) {
+          let ticking = false;
+          const update = () => {
+            const vh = window.innerHeight;
+            for (const el of layers) {
+              const r = el.getBoundingClientRect();
+              if (r.bottom < -200 || r.top > vh + 200) continue;
+              const k = parseFloat(el.dataset.parallax || '0');
+              el.style.translate = `0 ${((r.top + r.height / 2 - vh / 2) * k).toFixed(1)}px`;
+            }
+            for (const el of drifts) {
+              const host = el.parentElement ?? el;
+              const r = host.getBoundingClientRect();
+              if (r.bottom < -200 || r.top > vh + 200) continue;
+              const k = parseFloat(el.dataset.drift || '0');
+              el.style.translate = `${((r.top + r.height / 2 - vh / 2) * k).toFixed(1)}px 0`;
+            }
+            ticking = false;
+          };
+          const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+          on(window, 'scroll', onScroll, { passive: true });
+          on(window, 'resize', onScroll);
+          update();
+        }
+
+        if (window.matchMedia('(pointer: fine)').matches) {
+          document.querySelectorAll<HTMLElement>('[data-spot]').forEach((el) => {
+            on(el, 'pointermove', ((e: PointerEvent) => {
+              const r = el.getBoundingClientRect();
+              el.style.setProperty('--mx', `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
+              el.style.setProperty('--my', `${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%`);
+            }) as EventListener);
+          });
+        }
+
+        document.addEventListener('astro:before-swap', () => cleanup.forEach((fn) => fn()), { once: true });
       }
       document.addEventListener('astro:page-load', initMotion);
     </script>

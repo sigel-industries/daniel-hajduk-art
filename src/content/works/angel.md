@@ -21,11 +21,11 @@ coverAlt: ANGEL, a dark faceted figure with a single raised wing, standing on a 
 images:
   - src: ./angel/angel-hero.jpg
     alt: ANGEL seen from the front
-  - src: ./angel/angel-three-quarter.jpg
+  - src: ./angel/angel-three-quarter-crop.jpg
     alt: ANGEL seen from a three-quarter angle, the wing spread to the side
-  - src: ./angel/angel-profile.jpg
+  - src: ./angel/angel-profile-crop.jpg
     alt: ANGEL in profile, the wing seen edge-on
-  - src: ./angel/angel-above.jpg
+  - src: ./angel/angel-above-crop.jpg
     alt: ANGEL seen from slightly above, showing the surface texture
   - src: ./angel/angel-context.jpg
     alt: ANGEL on a sideboard, showing its scale in a room

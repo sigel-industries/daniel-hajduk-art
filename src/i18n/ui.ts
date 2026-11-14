@@ -28,7 +28,7 @@ export const ui = {
     'gallery.close': 'Close',
     'gallery.prev': 'Previous photograph',
     'gallery.next': 'Next photograph',
-    'footer.rights': 'All works and photographs',
+    'footer.rights': 'All rights to the works and photographs reserved',
   },
   cs: {},
 } as const;

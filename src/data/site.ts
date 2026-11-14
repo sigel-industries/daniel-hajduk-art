@@ -31,3 +31,9 @@ export const AVAILABILITY_LABEL: Record<string, string> = {
   'private-collection': 'Private collection',
   'on-request': 'On request',
 };
+
+/** Exhibition rooms: each category is a numbered room, in CATEGORIES order. */
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+export function roomNumber(id: CategoryId): string {
+  return ROMAN[CATEGORIES.findIndex((c) => c.id === id)] ?? '';
+}
