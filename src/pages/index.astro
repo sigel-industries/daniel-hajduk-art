@@ -1,54 +1,44 @@
 ---
 import { Picture } from 'astro:assets';
-import Exhibition from '../components/Exhibition.astro';
 import Base from '../layouts/Base.astro';
-import { SITE } from '../data/site';
+import Collection from '../components/Collection.astro';
+import { SITE, CATEGORIES } from '../data/site';
 import { getWorks } from '../lib/works';
-import { url, workUrl, formatPrice } from '../lib/url';
+import { curated } from '../lib/order';
+import { url, workUrl } from '../lib/url';
 
-const works = await getWorks();
-const available = works.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
+const works = curated(await getWorks());
+const lead = works[0];
+const rest = works.slice(1);
+const present = CATEGORIES.filter((c) => works.some((w) => w.data.category === c.id));
 ---
 <Base current="home">
-  <section class="intro" aria-labelledby="hero-name">
-    <h1 class="hero-name" id="hero-name"><span>Daniel</span><span>Hajduk</span></h1>
-    <div class="intro-side">
-      <p class="hero-line">Painting, sculpture, photography and other visual work. {SITE.location}.</p>
-      <p class="hero-links">
-        <a class="btn ghost" href={url('/works/')}>All works</a>
-        {available.length > 0 && <a class="btn ghost" href={url('/available/')}>Available</a>}
-      </p>
+  <section class="opening" aria-labelledby="hero-name">
+    <div class="opening-text">
+      <h1 class="hero-name" id="hero-name">Daniel Hajduk</h1>
+      <p class="opening-line">Painting, sculpture, photography and other visual work. {SITE.location}.</p>
     </div>
+    <figure class="opening-work">
+      <a href={workUrl(lead.data.category, lead.id)}>
+        <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600]} sizes="(max-width: 48rem) 100vw, 50vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+      </a>
+      <figcaption>{lead.data.title}</figcaption>
+    </figure>
   </section>
 
-  <Exhibition works={works} />
+  <section class="works-section" aria-labelledby="works-title">
+    <div class="works-head">
+      <h2 id="works-title">Works</h2>
+      <nav class="quiet-filters" aria-label="Filter works">
+        {present.map((c) => <a href={url(`/works/${c.id}/`)}>{c.label}</a>)}
+        <a href={url('/available/')}>Available</a>
+      </nav>
+    </div>
+    <Collection works={rest} />
+  </section>
 
-  {available.length > 0 && (
-    <section class="band available-band" aria-labelledby="available-title">
-      <div class="band-head">
-        <h2 class="section-title" id="available-title">Available now</h2>
-        <p>Works that can be acquired today.</p>
-      </div>
-      <ul class="offer">
-        {available.map((w) => (
-          <li>
-            <a href={workUrl(w.data.category, w.id)} class="offer-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[500, 900]} sizes="(max-width: 60rem) 100vw, 40vw" formats={['avif', 'webp']} /></a>
-            <div class="offer-text">
-              <h3><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a></h3>
-              <p>{[w.data.technique, w.data.dimensions].filter(Boolean).join(', ')}</p>
-              {w.data.edition && <p>Limited edition of {w.data.edition.size}{w.data.edition.available.length ? `, copies ${w.data.edition.available.join(' and ')} available` : ''}</p>}
-              {w.data.price && <p class="offer-price">{formatPrice(w.data.price.amount, w.data.price.currency)}{w.data.price.note && <span> {w.data.price.note}</span>}</p>}
-              <a class="btn" href={workUrl(w.data.category, w.id)}>View details</a>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
-
-  <section class="band about-band" aria-labelledby="about-title">
-    <h2 class="visually-hidden" id="about-title">About</h2>
-    <p class="statement">Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
-    <p class="hero-links"><a class="btn ghost" href={url('/about/')}>About the artist</a> <a class="btn ghost" href={url('/contact/')}>Contact</a></p>
+  <section class="closing" aria-label="About">
+    <p>Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
+    <p class="closing-links"><a href={url('/about/')}>About the artist</a><a href={url('/contact/')}>Contact</a></p>
   </section>
 </Base>

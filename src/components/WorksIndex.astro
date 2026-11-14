@@ -3,7 +3,7 @@
  * The full collection as a gallery grid, newest first.
  * Filters: all, each discipline that has works, and works available now.
  */
-import Exhibition from './Exhibition.astro';
+import Collection from './Collection.astro';
 import { CATEGORIES, type CategoryId } from '../data/site';
 import { url } from '../lib/url';
 import type { Work } from '../lib/works';
@@ -15,7 +15,7 @@ const anyAvailable = all.some((w) => w.data.availability === 'available');
 ---
 <header class="page-head">
   <h1 class="page-title">{title}</h1>
-  <p class="page-intro">{intro ?? `${works.length} works. Earlier work and pieces available now.`}</p>
+  <p class="page-intro">{intro ?? `${works.length} works, earlier and recent.`}</p>
   <nav class="filters" aria-label="Filter works">
     <a href={url('/works/')} aria-current={!active ? 'page' : undefined}>All</a>
     {present.map((c) => <a href={url(`/works/${c.id}/`)} aria-current={active === c.id ? 'page' : undefined}>{c.label}</a>)}
@@ -23,4 +23,4 @@ const anyAvailable = all.some((w) => w.data.availability === 'available');
   </nav>
 </header>
 
-<Exhibition works={works} />
+<Collection works={works} />

@@ -1,0 +1,37 @@
+---
+/**
+ * The collection hung in calm rows. Every work in a row has the same height,
+ * its width follows its own proportions, and the rows are separated by wide
+ * bands of wall. Nothing is cropped; works never touch.
+ * Scales from one work to a hundred without changing character.
+ */
+import { Picture } from 'astro:assets';
+import type { Work } from '../lib/works';
+import { curated } from '../lib/order';
+import { CATEGORIES, AVAILABILITY_LABEL } from '../data/site';
+import { workUrl, formatPrice } from '../lib/url';
+
+interface Props { works: Work[] }
+const works = curated(Astro.props.works);
+---
+<ul class="collection">
+  {works.map((w, i) => {
+    const d = w.data;
+    const r = d.cover.width / d.cover.height;
+    const cat = CATEGORIES.find((c) => c.id === d.category)!;
+    const forSale = d.availability === 'available';
+    return (
+      <li style={`--r:${r.toFixed(3)}`}>
+        <a href={workUrl(d.category, w.id)}>
+          <span class="c-img" data-reveal>
+            <Picture src={d.cover} alt={d.coverAlt} widths={[400, 700, 1000, 1400]} sizes="(max-width: 48rem) 100vw, 40vw" formats={['avif', 'webp']} loading={i < 4 ? 'eager' : 'lazy'} />
+          </span>
+          <span class="c-cap">
+            <span class="c-title">{d.title}</span>
+            <span class="c-meta">{[cat.singular, d.year, d.dimensions].filter(Boolean).join(', ')}{forSale && <span class="c-sale"> · {AVAILABILITY_LABEL.available}{d.price ? `, ${formatPrice(d.price.amount, d.price.currency)}` : ''}</span>}</span>
+          </span>
+        </a>
+      </li>
+    );
+  })}
+</ul>
