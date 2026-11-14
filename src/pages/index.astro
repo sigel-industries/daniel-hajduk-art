@@ -1,8 +1,7 @@
 ---
 import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import WorkCard from '../components/WorkCard.astro';
-import { SITE } from '../data/site';
+import { SITE, CATEGORIES } from '../data/site';
 import { getWorks, getSelectedWorks } from '../lib/works';
 import { url, workUrl, formatPrice } from '../lib/url';
 
@@ -12,7 +11,7 @@ const paintings = works.filter((w) => w.data.category === 'paintings');
 // opening image: the first selected painting
 const lead = selected.find((w) => w.data.category === 'paintings') ?? works[0];
 const available = works.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
-const recent = works.filter((w) => w.id !== lead.id).slice(0, 9);
+const showcase = selected.filter((w) => w.id !== lead.id && w.data.category === 'paintings').slice(0, 4);
 ---
 <Base current="home">
   <section class="hero" aria-labelledby="hero-name">
@@ -31,14 +30,16 @@ const recent = works.filter((w) => w.id !== lead.id).slice(0, 9);
   </section>
 
   <section class="band" aria-labelledby="recent-title">
-    <div class="band-head">
-      <h2 class="section-title" id="recent-title">Works</h2>
-      <p>{paintings.length} paintings and other works, newest first. <a href={url('/works/')}>See the full collection</a></p>
-    </div>
-    <div class="grid">
-      {recent.map((w) => <WorkCard work={w} />)}
-    </div>
-    <p class="band-more"><a class="btn ghost" href={url('/works/')}>All {works.length} works</a></p>
+    <h2 class="section-title" id="recent-title">Selected works</h2>
+    <ol class="showcase">
+      {showcase.map((w, i) => (
+        <li class:list={{ flip: i % 2 === 1 }}>
+          <a href={workUrl(w.data.category, w.id)} class="show-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[600, 1000, 1500]} sizes="(max-width: 60rem) 100vw, 55vw" formats={['avif', 'webp']} /></a>
+          <p class="show-cap"><a href={workUrl(w.data.category, w.id)}>{w.data.title}</a><span>{[CATEGORIES.find((c) => c.id === w.data.category)!.singular, w.data.year].filter(Boolean).join(', ')}</span></p>
+        </li>
+      ))}
+    </ol>
+    <p class="band-more"><a class="btn ghost" href={url('/works/')}>See all {works.length} works</a></p>
   </section>
 
   {available.length > 0 && (
