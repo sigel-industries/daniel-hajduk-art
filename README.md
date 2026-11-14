@@ -79,7 +79,7 @@ add `'cs'` to `locales` in `astro.config.mjs` and create pages under `src/pages/
 `.github/workflows/deploy.yml` builds, runs the checks and deploys on every push to `main`.
 One-time setup in the repository: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-The site URL is `https://<owner>.github.io/<repo>/`. The workflow sets `SITE_URL` and `BASE_PATH`
+The site URL is `https://<owner>.github.io/` when the repository is named `<owner>.github.io`, otherwise `https://<owner>.github.io/<repo>/`. The workflow sets `SITE_URL` and `BASE_PATH`
 from the repository automatically. For a custom domain later, set `SITE_URL=https://example.com`
 and `BASE_PATH=/` in the workflow and add the domain under Settings → Pages.
 
