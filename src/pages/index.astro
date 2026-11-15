@@ -1,4 +1,5 @@
 ---
+import { fieldRatio } from '../lib/field';
 import Base from '../layouts/Base.astro';
 import Mount from '../components/Mount.astro';
 import BodiesOfWork from '../components/BodiesOfWork.astro';
@@ -25,7 +26,7 @@ const availableItems = await Promise.all(available.map(async (w) => ({ w, v: awa
       <p class="opening-line">Painting, sculpture, photography and other visual work. Studio in {SITE.location}.</p>
       <p class="opening-links"><a href="#bodies">Selected works</a><a href={url('/works/')}>Archive · {all.length} works</a></p>
     </div>
-    <figure class="opening-work plate" style={`--r:${(lead.data.cover.width / lead.data.cover.height).toFixed(4)}`}>
+    <figure class="opening-work plate" style={`--r:${fieldRatio(lead.data.cover)}`}>
       <a href={workUrl(lead.data.category, lead.id)} {...leadV}>
         <Mount src={lead.data.cover} alt={lead.data.coverAlt} sizes="(max-width: 60rem) 100vw, 50vw" eager />
       </a>
@@ -42,7 +43,7 @@ const availableItems = await Promise.all(available.map(async (w) => ({ w, v: awa
       <header class="body-head"><h2 id="avail-title">Available now</h2><a class="quiet-link" href={url('/available/')}>View available works</a></header>
       <ul class="hang hang-s">
         {availableItems.map(({ w, v, cap }) => (
-          <li class="plate" style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(4)}`}>
+          <li class="plate" style={`--r:${fieldRatio(w.data.cover)}`}>
             <a href={workUrl(w.data.category, w.id)} {...v}>
               <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 40vw, 14rem" />
               <span class="plate-cap">

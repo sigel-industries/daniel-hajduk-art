@@ -5,9 +5,8 @@
 /* ─────────────────────────────────────────────────────────────
    Daniel Hajduk | Artist — a personal gallery.
 
-   Works hang directly on one calm wall (the page), never inside boxes.
-   They are shown whole at their own proportions and hung in justified
-   rows: every work in a row shares one height, the row is filled edge to
+   Every work is shown whole in a quiet exhibition field that hugs its
+   proportions, and the fields hang in justified rows: every work in a row shares one height, the row is filled edge to
    edge, widths follow each work's format. Scale is a single variable per
    context (large on the home page, compact in the archive). The page keeps
    its own neutral palette whatever is uploaded.
@@ -18,6 +17,9 @@
   --ink: #1d1d1b;
   --soft: #74716b;
   --rule: #dad8d2;
+  --field: #ebe8e2;
+  --field-hover: #e5e2db;
+  --field-edge: rgb(0 0 0 / 0.06);
   --sale: #2e6f49;
   --font: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
   --serif: 'Newsreader Variable', 'Newsreader', Georgia, serif;
@@ -53,13 +55,15 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .site-nav a { font-size: 0.92rem; color: var(--soft); transition: color 0.2s; }
 .site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--ink); }
 
-/* ── A work on the wall ─────────────────────────────────
-   No boxes: the image at its own proportions, one quiet shadow that also
-   separates a white work from the wall. */
-.art { display: block; aspect-ratio: var(--r); }
-.art picture, .art img { display: block; width: 100%; height: 100%; }
-.art img { object-fit: contain; box-shadow: 0 1px 1px rgb(0 0 0 / 0.07), 0 10px 22px -14px rgb(0 0 0 / 0.38); transition: box-shadow 0.4s var(--ease), transform 0.5s var(--ease); }
-a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0 / 0.07), 0 18px 30px -16px rgb(0 0 0 / 0.45); }
+/* ── The exhibition field ─────────────────────────────────
+   Every work sits whole (contain) in a field: a ground a shade deeper than
+   the page, a hairline edge and a contact shadow at the base. The field hugs
+   the work's proportions (see lib/field.ts), so there are no empty mats;
+   only extreme formats get a narrow margin of ground. Same everywhere. */
+.art { position: relative; display: block; aspect-ratio: var(--r); padding: 3.5%; background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge), 0 1px 0 rgb(0 0 0 / 0.04), 0 10px 16px -14px rgb(0 0 0 / 0.35); transition: background 0.3s; }
+.art picture { display: contents; }
+.art img { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.18)); }
+a:hover > .art, a:focus-visible > .art { background: var(--field-hover); }
 
 /* ── The hang: justified rows ─────────────────────────────
    Works in a row share one height (a common hanging line) and fill the
@@ -68,11 +72,16 @@ a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0
    lone narrow canvas) is capped and its row centred, so nothing balloons
    and no holes open. */
 .hang { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--row-gap) var(--col-gap); }
-.hang > li { flex: var(--r) 1 calc(var(--r) * var(--row)); max-width: calc(var(--r) * var(--row) * 1.25); min-width: 0; }
+.hang > li { flex: var(--r) 1 calc(var(--r) * var(--row)); max-width: calc(var(--r) * var(--row) * 1.3); min-width: 0; }
+.hang > li.is-more { display: none; }
 .hang > li[hidden] { display: none; }
 .hang-l { --row: min(48svh, 27rem); }
 .hang-m { --row: clamp(10rem, 16vw, 15rem); }
 .hang-s { --row: clamp(9rem, 13vw, 12rem); }
+/* one line: works never wrap; if they are wider than the line, all shrink in
+   proportion (flex-shrink is weighted by width), so they keep one height */
+.hang-line { flex-wrap: nowrap; }
+.hang-line > li { max-width: none; flex-grow: 0; }
 
 /* caption under each work */
 .plate a { display: block; }
@@ -103,16 +112,18 @@ a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0
 .facts dd a { text-decoration: underline; text-underline-offset: 0.2em; }
 .section-title, .body-head h2 { font-family: var(--serif); font-size: clamp(1.7rem, 2.6vw, 2.4rem); font-weight: 300; letter-spacing: -0.02em; line-height: 1; }
 
-/* ── Home: opening ──────────────────────────────────────── */
-.opening { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 6rem); align-items: end; min-height: calc(100svh - var(--header)); padding: clamp(1rem, 3vw, 2rem) var(--gutter) clamp(2.5rem, 5vw, 4rem); }
-.hero-name { font-family: var(--serif); font-optical-sizing: auto; font-weight: 300; font-size: clamp(3.4rem, 8.6vw, 9.5rem); line-height: 0.88; letter-spacing: -0.035em; animation: rise 1.2s var(--ease) both; }
+/* ── Home: opening ──────────────────────────────────────
+   Name, line and links sit on the same optical centre as the work, so the
+   two halves balance; the work's height is capped so it never towers. */
+.opening { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; min-height: min(calc(100svh - var(--header)), 56rem); padding: clamp(2rem, 4vw, 3.5rem) var(--gutter); }
+.hero-name { font-family: var(--serif); font-optical-sizing: auto; font-weight: 300; font-size: clamp(3.4rem, 7.6vw, 8.4rem); line-height: 0.88; letter-spacing: -0.035em; animation: rise 1.2s var(--ease) both; }
 .hero-name span, .hero-name em { display: block; }
 .hero-name em { font-style: italic; padding-left: 0.42em; }
-.opening-line { margin-top: clamp(1.4rem, 3vw, 2.4rem); max-width: 22em; color: var(--soft); }
+.opening-line { margin-top: clamp(1.4rem, 2.6vw, 2.2rem); max-width: 24em; color: var(--soft); font-size: clamp(1rem, 1.2vw, 1.1rem); }
 .opening-links { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1.6rem; font-size: 0.92rem; }
 .opening-links a { text-decoration: underline; text-underline-offset: 0.3em; text-decoration-color: var(--rule); }
 .opening-links a:hover { text-decoration-color: currentColor; }
-.opening-work { justify-self: end; width: min(100%, calc((100svh - var(--header) - 9rem) * var(--r))); }
+.opening-work { justify-self: center; width: min(100%, calc(min(70svh, 44rem) * var(--r))); }
 
 /* ── Home: bodies of work ───────────────────────────────── */
 .bodies { padding: 0 var(--gutter); }
@@ -146,6 +157,12 @@ a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0
 .view-toggle { display: flex; gap: 0.2rem; }
 .view-toggle button { font-size: 0.84rem; padding: 0.3rem 0.75rem; color: var(--soft); border-radius: 999px; }
 .view-toggle button[aria-pressed='true'] { color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.filter-toggle { display: none; font-size: 0.86rem; padding: 0.35rem 0.85rem; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--rule); }
+.filter-toggle[aria-expanded='true'] { box-shadow: inset 0 0 0 1px var(--ink); }
+.archive-more[hidden] { display: none; }
+.archive-more { display: flex; justify-content: center; margin-top: var(--section); }
+.archive-more button { font-size: 0.9rem; padding: 0.7rem 1.4rem; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ink); }
+.archive-more button:hover { background: var(--ink); color: var(--page); }
 .archive-empty { padding: 4rem 0; color: var(--soft); }
 .archive-empty button { text-decoration: underline; color: var(--ink); }
 
@@ -153,8 +170,7 @@ a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0
 .is-list .hang { display: block; }
 .is-list .hang > li { max-width: none; }
 .is-list .plate a { display: grid; grid-template-columns: 4.5rem minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.4rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--rule); }
-.is-list .art { width: 4.5rem; height: 4.5rem; aspect-ratio: auto; display: flex; align-items: center; justify-content: center; }
-.is-list .art img { width: auto; height: auto; max-width: 100%; max-height: 100%; box-shadow: 0 1px 4px -1px rgb(0 0 0 / 0.3); }
+.is-list .art { width: 4.5rem; height: 4.5rem; aspect-ratio: auto; padding: 6%; }
 .is-list .plate-cap { display: contents; }
 .is-list .plate-title { font-size: 1.1rem; }
 .is-list .plate-extra { display: block; }
@@ -241,8 +257,8 @@ a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0
 
 /* ── Tablet ─────────────────────────────────────────────── */
 @media (max-width: 60rem) {
-  .opening { grid-template-columns: 1fr; min-height: auto; align-items: start; }
-  .opening-work { justify-self: start; width: min(100%, 30rem); }
+  .opening { grid-template-columns: 1fr; min-height: auto; align-items: start; gap: 2rem; }
+  .opening-work { justify-self: start; width: min(100%, calc(62svh * var(--r)), 34rem); }
   .work-top { grid-template-columns: 1fr; }
   .work-text, .page-cols { grid-template-columns: 1fr; }
 }
@@ -251,16 +267,25 @@ a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0
 @media (max-width: 40rem) {
   :root { --header: 3.75rem; --col-gap: 0.9rem; --row-gap: 1.8rem; --section: 4.5rem; }
   .hero-name { font-size: 19vw; }
-  .opening-text { padding-top: 1.5rem; }
-  .opening-work { width: 100%; }
-  .hang-l { --row: 15rem; }
-  .hang-m { --row: 9.5rem; }
+  .opening-text { padding-top: 0.5rem; }
+  .opening-work { width: min(100%, calc(60svh * var(--r))); }
+  .hang-l { --row: calc((100vw - 2 * var(--gutter) - var(--col-gap)) / 2.1); }
+  .hang-line { flex-wrap: wrap; }
+  .hang-line > li { flex-grow: 1; max-width: calc(var(--r) * var(--row) * 1.3); }
+  :root { --section: 3.5rem; }
+  .hang-m { --row: calc((100vw - 2 * var(--gutter) - var(--col-gap)) / 3); }
   .hang-s { --row: 8.5rem; }
   .plate-title { font-size: 0.95rem; }
   .plate-meta, .plate-status { font-size: 0.72rem; }
   .archive-tools { position: static; }
-  .filter-groups { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); gap: 1.4rem; scrollbar-width: none; }
-  .filter-group { flex-wrap: nowrap; white-space: nowrap; }
+  .filter-toggle { display: inline-flex; }
+  .filter-groups { display: none; flex-direction: column; gap: 0.9rem; padding: 0.4rem 0 0.2rem; }
+  .archive-tools.filters-open .filter-groups { display: flex; }
+  .filter-label { flex-basis: 100%; margin: 0 0 0.1rem; }
+  .archive-tools { gap: 0.6rem; }
+  .archive-bar { order: -1; }
+  .search { flex: 1 1 100%; }
+  .search input { width: 100%; }
   .is-list .plate a { grid-template-columns: 3.75rem minmax(0, 1fr); gap: 0.1rem 0.9rem; }
   .is-list .art { width: 3.75rem; height: 3.75rem; grid-row: span 3; }
   .is-list .plate-cap > * { grid-column: 2; }

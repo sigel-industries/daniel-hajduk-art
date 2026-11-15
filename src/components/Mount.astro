@@ -1,16 +1,17 @@
 ---
 /**
- * How a work is shown anywhere on the site: the whole image at its own
- * proportions, directly on the wall, with one quiet shadow. Size comes from
- * the layout around it (a row height), never from a box of fixed shape.
- * The image's ratio is exposed as --r so rows can size works proportionally.
+ * How a work is shown anywhere on the site: whole (object-fit: contain) inside
+ * a quiet exhibition field: a slightly darker neutral ground, a hairline and a
+ * soft contact shadow. The field's proportions come from fieldRatio(), so it
+ * hugs ordinary formats and keeps extreme ones within the row rhythm.
  */
 import { Picture } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import { fieldRatio } from '../lib/field';
 
 interface Props { src: ImageMetadata; alt: string; sizes: string; eager?: boolean; class?: string }
 const { src, alt, sizes, eager = false, class: cls } = Astro.props;
 ---
-<span class:list={['art', cls]} style={`--r:${(src.width / src.height).toFixed(4)}`}>
+<span class:list={['art', cls]} style={`--r:${fieldRatio(src)}`}>
   <Picture src={src} alt={alt} widths={[360, 560, 800, 1100, 1500, 2000]} sizes={sizes} formats={['avif', 'webp']} loading={eager ? 'eager' : 'lazy'} decoding="async" />
 </span>

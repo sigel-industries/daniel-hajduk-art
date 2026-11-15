@@ -1,10 +1,11 @@
 ---
+import { fieldRatio } from '../lib/field';
 /**
  * The archive: every work on identical mounts in a regular grid, or as a list.
  * Order is automatic (src/lib/curation.ts). Filters are generated from the data:
  * category, body of work, period (decade from `year`), availability, plus search.
  * Filters, search and view are independent and kept in the URL; both views show
- * exactly the same set of works. Without JavaScript everything is shown.
+ * exactly the same set of works. Results appear 24 at a time ("Show more"). Without JavaScript everything is shown.
  */
 import Mount from './Mount.astro';
 import type { Work } from '../lib/works';
@@ -30,8 +31,8 @@ const groups = [
 ].filter((g) => g.opts.length > 1 || (g.key === 's' && g.opts.length > 0));
 ---
 <div class="archive" data-archive data-preset={JSON.stringify(preset)}>
-  <div class="archive-tools">
-    <div class="filter-groups">
+  <div class="archive-tools" data-tools>
+    <div class="filter-groups" id="archive-filters">
       {groups.map((g) => (
         <div class="filter-group" role="group" aria-label={g.label}>
           <span class="filter-label">{g.label}</span>
@@ -41,6 +42,7 @@ const groups = [
     </div>
     <div class="archive-bar">
       <label class="search"><span class="visually-hidden">Search works</span><input type="search" placeholder="Search title, technique…" data-search /></label>
+      <button type="button" class="filter-toggle" aria-expanded="false" aria-controls="archive-filters" data-filter-toggle>Filters</button>
       <p class="result-count" aria-live="polite" data-count>{works.length} works</p>
       <div class="view-toggle" role="group" aria-label="View">
         <button type="button" data-view="grid" aria-pressed="true">Grid</button>
@@ -55,7 +57,7 @@ const groups = [
       const text = [d.title, d.technique, d.materials, d.series, cat.label, grp?.title].filter(Boolean).join(' ').toLowerCase();
       const status = d.availability === 'available' ? `${AVAILABILITY_LABEL.available}${d.price ? `, ${formatPrice(d.price.amount, d.price.currency)}` : ''}` : d.availability ? AVAILABILITY_LABEL[d.availability] : '';
       return (
-        <li class="plate" style={`--r:${(d.cover.width / d.cover.height).toFixed(4)}`} data-c={cat.id} data-g={grp?.id ?? ''} data-p={decade(d.year)} data-s={d.availability ?? ''} data-text={text}>
+        <li class="plate" style={`--r:${fieldRatio(d.cover)}`} data-c={cat.id} data-g={grp?.id ?? ''} data-p={decade(d.year)} data-s={d.availability ?? ''} data-text={text}>
           <a href={workUrl(d.category, w.id)} {...v}>
             <Mount src={d.cover} alt={d.coverAlt} sizes="(max-width: 40rem) 46vw, (max-width: 70rem) 30vw, 22vw" eager={i < 8} />
             <span class="plate-cap">
@@ -69,6 +71,7 @@ const groups = [
       );
     })}
   </ul>
+  <p class="archive-more" data-more-wrap hidden><button type="button" data-more>Show more works</button></p>
   <p class="archive-empty" data-empty hidden>No works match this selection. <button type="button" data-reset>Show all works</button></p>
 </div>
 
@@ -93,13 +96,28 @@ const groups = [
     try { stored = localStorage.getItem('archive-view') || ''; } catch {}
     let view = (params.get('view') || stored) === 'list' ? 'list' : 'grid';
 
+    // progressive loading: show PAGE matching works, then more on request
+    const PAGE = 24;
+    let limit = PAGE;
+    const moreWrap = root.querySelector<HTMLElement>('[data-more-wrap]')!;
+    const tools = root.querySelector<HTMLElement>('[data-tools]')!;
+    const toggle = root.querySelector<HTMLButtonElement>('[data-filter-toggle]')!;
+    toggle.addEventListener('click', () => {
+      const open = !tools.classList.contains('filters-open');
+      tools.classList.toggle('filters-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    });
+    root.querySelector('[data-more]')!.addEventListener('click', () => { limit += PAGE; apply(false); });
     const apply = (push = true) => {
       let n = 0;
       for (const it of items) {
         const ok = keys.every((k) => !state[k].size || state[k].has(it.dataset[k] || '')) && (!q || (it.dataset.text || '').includes(q));
         it.hidden = !ok;
-        if (ok) n++;
+        if (ok) { n++; it.classList.toggle('is-more', n > limit); }
       }
+      moreWrap.hidden = n <= limit;
+      const active = keys.reduce((a, k) => a + state[k].size, 0);
+      toggle.textContent = active ? `Filters (${active})` : 'Filters';
       chips.forEach((c) => c.setAttribute('aria-pressed', String(state[c.dataset.key!].has(c.dataset.value!))));
       countEl.textContent = n === items.length ? `${n} works` : `${n} of ${items.length} works`;
       empty.hidden = n > 0;
@@ -114,11 +132,12 @@ const groups = [
       }
     };
     chips.forEach((c) => c.addEventListener('click', () => {
+      limit = PAGE;
       const set = state[c.dataset.key!];
       set.has(c.dataset.value!) ? set.delete(c.dataset.value!) : set.add(c.dataset.value!);
       apply();
     }));
-    search.addEventListener('input', () => { q = search.value.trim().toLowerCase(); apply(); });
+    search.addEventListener('input', () => { q = search.value.trim().toLowerCase(); limit = PAGE; apply(); });
     views.forEach((b) => b.addEventListener('click', () => { view = b.dataset.view!; try { localStorage.setItem('archive-view', view); } catch {} apply(); }));
     root.querySelector('[data-reset]')!.addEventListener('click', () => { keys.forEach((k) => state[k].clear()); q = ''; search.value = ''; apply(); });
     apply(false);

@@ -124,10 +124,13 @@ edit them directly: upload a photo, pick category and group, fill in the facts, 
 
 ## How works are shown
 
-Works hang directly on the page, whole and at their own proportions (never cropped or stretched),
-in justified rows: works in a row share one height and fill it edge to edge (`.hang` in
+Every work is shown whole (`object-fit: contain`) in an exhibition field: a slightly deeper
+neutral ground, a hairline and a contact shadow. The field follows the work's proportions within
+0.72–1.5 (`src/lib/field.ts`), so ordinary formats fill it and extreme ones keep the rhythm.
+Fields hang in justified rows: works in a row share one height and fill it edge to edge (`.hang` in
 `global.css`, scale set by `--row`: large on the home page, compact in the archive). Home page
-sections show as many works of a body of work as fill one row.
+sections show up to four works of a body of work on one line. The archive shows 24 works at a
+time with "Show more".
 
 ## How works are arranged
 

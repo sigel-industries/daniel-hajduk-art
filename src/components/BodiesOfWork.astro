@@ -1,9 +1,10 @@
 ---
+import { fieldRatio } from '../lib/field';
 /**
  * Home page presentation: one section per body of work (src/content/groups/),
  * in their order. Each section shows the works marked `selected` (or, if none,
- * the first works of the group): as many as fill one wide row at the home page
- * scale, hung as a justified row (see .hang in global.css). Works without a group are
+ * the first works of the group): up to four, hung on one line at the home page
+ * scale (see .hang-line in global.css). Works without a group are
  * gathered under "Other works". New groups and works appear automatically.
  */
 import Mount from './Mount.astro';
@@ -23,15 +24,8 @@ for (const g of [...groups, { id: '', title: 'Other works', order: 999 }]) {
   const pool = all.filter((w) => w.id !== exclude);
   const picked = pool.filter((w) => w.data.selected);
   const src = [...picked, ...pool.filter((w) => !picked.includes(w))];
-  // one wall per section: take works until their combined proportions fill
-  // about one row at the home page scale (sum of width/height ≈ 3)
-  const ordered = await sequence(src);
-  let shown: Work[] = [], sum = 0;
-  for (const w of ordered) {
-    const r = w.data.cover.width / w.data.cover.height;
-    if (shown.length >= 1 && sum + r > 3.05) break;
-    shown.push(w); sum += r;
-  }
+  // up to four works on one line; the line scales down to fit, keeping one height
+  const shown: Work[] = (await sequence(src)).slice(0, 4);
   if (!shown.length) continue;
 
   const items = await Promise.all(shown.map(async (w) => ({ w, v: await viewerAttrs(w), cap: await captionOf(w, false) })));
@@ -45,9 +39,9 @@ for (const g of [...groups, { id: '', title: 'Other works', order: 999 }]) {
       {'intro' in g && g.intro && <p class="body-intro">{g.intro}</p>}
       <a class="quiet-link" href={g.id ? url(`/works/?g=${g.id}`) : url('/works/')}>{total === 1 ? '1 work' : `All ${total} works`}</a>
     </header>
-    <ul class="hang hang-l">
+    <ul class="hang hang-l hang-line">
       {items.map(({ w, v, cap }, i) => (
-        <li class="plate" style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(4)}`}>
+        <li class="plate" style={`--r:${fieldRatio(w.data.cover)}`}>
           <a href={workUrl(w.data.category, w.id)} {...v}>
             <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 100vw, 50vw" eager={si === 0} />
             <span class="plate-cap"><span class="plate-title">{w.data.title}</span><span class="plate-meta">{cap}</span></span>
