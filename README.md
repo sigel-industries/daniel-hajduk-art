@@ -124,8 +124,10 @@ edit them directly: upload a photo, pick category and group, fill in the facts, 
 
 ## How works are shown
 
-Every work, everywhere, is shown whole on a neutral mount of fixed proportions (`Mount.astro`),
-never cropped or stretched. The mounts form the grid, so any format, colour or medium fits.
+Works hang directly on the page, whole and at their own proportions (never cropped or stretched),
+in justified rows: works in a row share one height and fill it edge to edge (`.hang` in
+`global.css`, scale set by `--row`: large on the home page, compact in the archive). Home page
+sections show as many works of a body of work as fill one row.
 
 ## How works are arranged
 

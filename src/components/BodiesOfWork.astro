@@ -2,8 +2,8 @@
 /**
  * Home page presentation: one section per body of work (src/content/groups/),
  * in their order. Each section shows the works marked `selected` (or, if none,
- * the first works of the group): one leading work on a double mount and up to
- * four beside it, always in the same composition. Works without a group are
+ * the first works of the group): as many as fill one wide row at the home page
+ * scale, hung as a justified row (see .hang in global.css). Works without a group are
  * gathered under "Other works". New groups and works appear automatically.
  */
 import Mount from './Mount.astro';
@@ -23,13 +23,17 @@ for (const g of [...groups, { id: '', title: 'Other works', order: 999 }]) {
   const pool = all.filter((w) => w.id !== exclude);
   const picked = pool.filter((w) => w.data.selected);
   const src = [...picked, ...pool.filter((w) => !picked.includes(w))];
-  const take = src.length >= 5 ? 5 : src.length >= 3 ? 3 : src.length;
-  let shown = await sequence(src.slice(0, take));
-  // the lead sits on a wide mount in short sections: prefer the widest work there
-  const ratio = (w: Work) => w.data.cover.width / w.data.cover.height;
-  const lead = shown.find((w) => w.data.featured) ?? (take < 5 ? [...shown].sort((a, b) => ratio(b) - ratio(a))[0] : shown[0]);
-  if (!lead) continue;
-  shown = [lead, ...shown.filter((w) => w !== lead)];
+  // one wall per section: take works until their combined proportions fill
+  // about one row at the home page scale (sum of width/height ≈ 3)
+  const ordered = await sequence(src);
+  let shown: Work[] = [], sum = 0;
+  for (const w of ordered) {
+    const r = w.data.cover.width / w.data.cover.height;
+    if (shown.length >= 1 && sum + r > 3.05) break;
+    shown.push(w); sum += r;
+  }
+  if (!shown.length) continue;
+
   const items = await Promise.all(shown.map(async (w) => ({ w, v: await viewerAttrs(w), cap: await captionOf(w, false) })));
   sections.push({ g, total: all.length, items });
 }
@@ -41,11 +45,11 @@ for (const g of [...groups, { id: '', title: 'Other works', order: 999 }]) {
       {'intro' in g && g.intro && <p class="body-intro">{g.intro}</p>}
       <a class="quiet-link" href={g.id ? url(`/works/?g=${g.id}`) : url('/works/')}>{total === 1 ? '1 work' : `All ${total} works`}</a>
     </header>
-    <ul class:list={['body-plates', `n${items.length}`]}>
+    <ul class="hang hang-l">
       {items.map(({ w, v, cap }, i) => (
-        <li class:list={['plate', { lead: i === 0 }]}>
+        <li class="plate" style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(4)}`}>
           <a href={workUrl(w.data.category, w.id)} {...v}>
-            <Mount src={w.data.cover} alt={w.data.coverAlt} sizes={i === 0 ? '(max-width: 40rem) 100vw, 50vw' : '(max-width: 40rem) 46vw, 25vw'} eager={si === 0} />
+            <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 100vw, 50vw" eager={si === 0} />
             <span class="plate-cap"><span class="plate-title">{w.data.title}</span><span class="plate-meta">{cap}</span></span>
           </a>
         </li>

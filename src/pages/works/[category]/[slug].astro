@@ -79,9 +79,9 @@ const jsonLd = {
     {related.length > 0 && (
       <section class="related" aria-labelledby="related-title">
         <h2 id="related-title">{group ? `More from ${group.title}` : `More ${category.label.toLowerCase()}`}</h2>
-        <ul class="plates">
+        <ul class="hang hang-s">
           {related.map((w) => (
-            <li class="plate">
+            <li class="plate" style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(4)}`}>
               <a href={workUrl(w.data.category, w.id)}>
                 <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 46vw, 22vw" />
                 <span class="plate-cap"><span class="plate-title">{w.data.title}</span></span>

@@ -5,19 +5,16 @@
 /* ─────────────────────────────────────────────────────────────
    Daniel Hajduk | Artist — a personal gallery.
 
-   One rule governs every page: a work is never placed loose on the page.
-   It is shown whole on a MOUNT, a neutral panel of fixed proportions
-   (4:5), centred, with an even margin and one quiet shadow. The mounts,
-   not the photographs, form the grid, so any work, colour, format or
-   medium sits in the same rhythm, and the page keeps its own neutral
-   palette whatever is uploaded.
-
-   Palette: page, mount, ink, secondary ink, hairline. Type: Newsreader
-   (titles, the name) and Archivo (facts, interface).
+   Works hang directly on one calm wall (the page), never inside boxes.
+   They are shown whole at their own proportions and hung in justified
+   rows: every work in a row shares one height, the row is filled edge to
+   edge, widths follow each work's format. Scale is a single variable per
+   context (large on the home page, compact in the archive). The page keeps
+   its own neutral palette whatever is uploaded.
+   Type: Newsreader (titles, the name) and Archivo (facts, interface).
    ───────────────────────────────────────────────────────────── */
 :root {
   --page: #f3f2ef;
-  --mount: #e6e4df;
   --ink: #1d1d1b;
   --soft: #74716b;
   --rule: #dad8d2;
@@ -56,21 +53,34 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .site-nav a { font-size: 0.92rem; color: var(--soft); transition: color 0.2s; }
 .site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--ink); }
 
-/* ── The mount: the single way any work is shown ────────── */
-.mount { position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: var(--ratio, 4 / 5); padding: 11%; background: var(--mount); overflow: hidden; min-height: 0; }
-.mount picture { display: contents; }
-.mount img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; box-shadow: 0 1px 1px rgb(0 0 0 / 0.06), 0 8px 18px -10px rgb(0 0 0 / 0.35); }
-a:hover > .mount img, a:focus-visible > .mount img { box-shadow: 0 1px 1px rgb(0 0 0 / 0.06), 0 14px 26px -12px rgb(0 0 0 / 0.42); }
-.mount, .mount img { transition: box-shadow 0.4s var(--ease), background 0.4s; }
-a:hover > .mount { background: #e1dfd9; }
+/* ── A work on the wall ─────────────────────────────────
+   No boxes: the image at its own proportions, one quiet shadow that also
+   separates a white work from the wall. */
+.art { display: block; aspect-ratio: var(--r); }
+.art picture, .art img { display: block; width: 100%; height: 100%; }
+.art img { object-fit: contain; box-shadow: 0 1px 1px rgb(0 0 0 / 0.07), 0 10px 22px -14px rgb(0 0 0 / 0.38); transition: box-shadow 0.4s var(--ease), transform 0.5s var(--ease); }
+a:hover > .art img, a:focus-visible > .art img { box-shadow: 0 1px 1px rgb(0 0 0 / 0.07), 0 18px 30px -16px rgb(0 0 0 / 0.45); }
 
-/* caption: title in serif, facts small */
-.plate a { display: flex; flex-direction: column; height: 100%; }
-.plate-cap { display: grid; gap: 0.1rem; margin-top: 0.8rem; }
-.plate-title { font-family: var(--serif); font-size: 1.05rem; line-height: 1.25; }
-.plate-meta, .plate-extra { font-size: 0.78rem; color: var(--soft); }
+/* ── The hang: justified rows ─────────────────────────────
+   Works in a row share one height (a common hanging line) and fill the
+   row edge to edge; each work's width follows its own proportions.
+   --row sets the scale. A work that would grow far beyond the scale (a
+   lone narrow canvas) is capped and its row centred, so nothing balloons
+   and no holes open. */
+.hang { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--row-gap) var(--col-gap); }
+.hang > li { flex: var(--r) 1 calc(var(--r) * var(--row)); max-width: calc(var(--r) * var(--row) * 1.25); min-width: 0; }
+.hang > li[hidden] { display: none; }
+.hang-l { --row: min(48svh, 27rem); }
+.hang-m { --row: clamp(10rem, 16vw, 15rem); }
+.hang-s { --row: clamp(9rem, 13vw, 12rem); }
+
+/* caption under each work */
+.plate a { display: block; }
+.plate-cap { display: grid; gap: 0.05rem; margin-top: 0.7rem; }
+.plate-title { font-family: var(--serif); font-size: 1.02rem; line-height: 1.25; }
+.hang-l .plate-title { font-size: 1.12rem; }
+.plate-meta, .plate-extra, .plate-status { font-size: 0.76rem; color: var(--soft); }
 .plate-extra { display: none; }
-.plate-status { font-size: 0.78rem; color: var(--soft); }
 .plate-status.sale { color: var(--sale); }
 .plate a:hover .plate-title { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
 
@@ -102,25 +112,15 @@ a:hover > .mount { background: #e1dfd9; }
 .opening-links { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1.6rem; font-size: 0.92rem; }
 .opening-links a { text-decoration: underline; text-underline-offset: 0.3em; text-decoration-color: var(--rule); }
 .opening-links a:hover { text-decoration-color: currentColor; }
-.opening-work { justify-self: end; width: min(100%, calc((100svh - var(--header) - 9rem) * 0.8)); }
+.opening-work { justify-self: end; width: min(100%, calc((100svh - var(--header) - 9rem) * var(--r))); }
 
 /* ── Home: bodies of work ───────────────────────────────── */
 .bodies { padding: 0 var(--gutter); }
 .body, .avail { padding: var(--section) 0 0; }
 .avail { margin-inline: var(--gutter); }
-.body-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1.6rem; padding-top: 1.1rem; margin-bottom: clamp(1.8rem, 3vw, 2.6rem); border-top: 1px solid var(--rule); }
+.body-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1.6rem; padding-top: 1rem; margin-bottom: clamp(1.4rem, 2.4vw, 2rem); border-top: 1px solid var(--rule); }
 .body-head .quiet-link { margin-left: auto; }
 .body-intro { flex-basis: 100%; max-width: 40em; color: var(--soft); order: 3; }
-.body-plates { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--row-gap) var(--col-gap); }
-.body-plates.n5 .lead { grid-column: span 2; grid-row: span 2; }
-.body-plates.n5 .lead .mount { aspect-ratio: auto; flex: 1; }
-.body-plates.n3 .lead { grid-column: span 2; }
-.body-plates.n3 .lead .mount { --ratio: 8 / 5; }
-.body-plates.n2 { grid-template-columns: 2fr 1fr 1fr; }
-.body-plates.n2 .lead .mount, .body-plates.n1 .lead .mount { --ratio: 8 / 5; }
-.body-plates.n1 { grid-template-columns: minmax(0, 1fr); max-width: calc(50% + var(--col-gap) / 2); }
-
-.avail-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 15rem)); gap: var(--row-gap) var(--col-gap); }
 .closing { margin: var(--section) var(--gutter) 0; padding: var(--section) 0; border-top: 1px solid var(--rule); }
 .closing-statement { max-width: 22em; font-family: var(--serif); font-weight: 300; font-size: clamp(1.5rem, 2.8vw, 2.6rem); line-height: 1.18; letter-spacing: -0.015em; text-wrap: balance; }
 .closing-links { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1.8rem; font-size: 0.92rem; }
@@ -149,22 +149,22 @@ a:hover > .mount { background: #e1dfd9; }
 .archive-empty { padding: 4rem 0; color: var(--soft); }
 .archive-empty button { text-decoration: underline; color: var(--ink); }
 
-.plates { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(14.5rem, 100%), 1fr)); gap: var(--row-gap) var(--col-gap); }
-.plates > li[hidden] { display: none; }
-
-/* list view: same items, compact rows */
-.is-list .plates { display: block; }
-.is-list .plate a { display: grid; grid-template-columns: 4.5rem minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.4rem; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid var(--rule); height: auto; }
-.is-list .plate .mount { --ratio: 1; padding: 8%; }
-.is-list .plate .mount img { box-shadow: none; }
+/* list view: the same items as compact rows */
+.is-list .hang { display: block; }
+.is-list .hang > li { max-width: none; }
+.is-list .plate a { display: grid; grid-template-columns: 4.5rem minmax(0, 1.3fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 1.4rem; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid var(--rule); }
+.is-list .art { width: 4.5rem; height: 4.5rem; aspect-ratio: auto; display: flex; align-items: center; justify-content: center; }
+.is-list .art img { width: auto; height: auto; max-width: 100%; max-height: 100%; box-shadow: 0 1px 4px -1px rgb(0 0 0 / 0.3); }
 .is-list .plate-cap { display: contents; }
-.is-list .plate-title { font-size: 1.12rem; }
+.is-list .plate-title { font-size: 1.1rem; }
 .is-list .plate-extra { display: block; }
 .is-list .plate-status { justify-self: end; }
 
 /* ── Work page ──────────────────────────────────────────── */
 .work-top { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(16rem, 23rem); gap: clamp(2rem, 5vw, 5rem); align-items: end; padding: clamp(1rem, 3vw, 2rem) var(--gutter) clamp(2rem, 4vw, 3rem); }
-.mount-stage { aspect-ratio: auto; width: 100%; height: min(calc(100svh - var(--header) - 4rem), 62rem); padding: clamp(1.5rem, 5%, 4.5rem); cursor: zoom-in; }
+.work-main { display: flex; justify-content: center; width: 100%; cursor: zoom-in; }
+.work-main picture { display: contents; }
+.work-main img { width: auto; height: auto; max-width: 100%; max-height: min(calc(100svh - var(--header) - 4rem), 64rem); box-shadow: 0 1px 1px rgb(0 0 0 / 0.07), 0 16px 32px -18px rgb(0 0 0 / 0.42); }
 .work-caption { padding-bottom: 0.5rem; }
 .wc-artist { font-size: 0.86rem; color: var(--soft); }
 .wc-title { font-family: var(--serif); font-size: clamp(2.1rem, 3.4vw, 3.2rem); font-weight: 300; line-height: 1; letter-spacing: -0.025em; margin: 0.3rem 0 1.5rem; }
@@ -173,14 +173,13 @@ a:hover > .mount { background: #e1dfd9; }
 .wc-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.3rem; }
 .strip { overflow-x: auto; padding: 0 0 2.5rem; scrollbar-width: thin; }
 .strip ol { display: flex; gap: var(--col-gap); padding-inline: var(--gutter); width: max-content; }
-.strip li { width: 11rem; }
+.strip img { height: 9rem; width: auto; box-shadow: 0 1px 4px -1px rgb(0 0 0 / 0.3); }
 .strip .gallery-item { display: block; width: 100%; cursor: zoom-in; }
 .strip-label { display: block; margin-top: 0.5rem; font-size: 0.75rem; color: var(--soft); }
 .work-text { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 2rem 5vw; padding: clamp(3rem, 6vw, 5rem) 0; margin-inline: var(--gutter); border-top: 1px solid var(--rule); }
 .work-lede { font-family: var(--serif); font-weight: 300; font-size: clamp(1.45rem, 2.1vw, 2rem); line-height: 1.22; }
 .related { margin: 0 var(--gutter); padding: clamp(3rem, 6vw, 5rem) 0; border-top: 1px solid var(--rule); }
 .related h2 { font-family: var(--serif); font-size: clamp(1.4rem, 2vw, 1.9rem); font-weight: 300; margin-bottom: 2rem; }
-.related .plates { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .work-nav { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; padding: 2rem 0; margin-inline: var(--gutter); border-top: 1px solid var(--rule); font-size: 0.92rem; }
 .work-nav a { display: grid; gap: 0.15rem; }
 .work-nav a span { font-size: 0.78rem; color: var(--soft); }
@@ -245,42 +244,28 @@ a:hover > .mount { background: #e1dfd9; }
   .opening { grid-template-columns: 1fr; min-height: auto; align-items: start; }
   .opening-work { justify-self: start; width: min(100%, 30rem); }
   .work-top { grid-template-columns: 1fr; }
-  .mount-stage { height: min(72svh, 48rem); }
   .work-text, .page-cols { grid-template-columns: 1fr; }
-  .body-plates { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .body-plates.n5 .lead { grid-column: span 3; grid-row: auto; }
-  .body-plates.n5 .lead .mount { aspect-ratio: 8 / 5; flex: none; }
-  .body-plates.n3 .lead, .body-plates.n2 .lead { grid-column: span 3; }
-  .body-plates.n2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .body-plates.n1 { max-width: none; }
-  .related .plates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* ── Phone: two columns of mounts, the lead full width ──── */
+/* ── Phone: the same hang at a smaller scale ───────────── */
 @media (max-width: 40rem) {
   :root { --header: 3.75rem; --col-gap: 0.9rem; --row-gap: 1.8rem; --section: 4.5rem; }
   .hero-name { font-size: 19vw; }
   .opening-text { padding-top: 1.5rem; }
   .opening-work { width: 100%; }
-  .body-plates, .body-plates.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .body-plates .lead, .body-plates.n5 .lead, .body-plates.n3 .lead, .body-plates.n2 .lead { grid-column: span 2; }
-  .body-plates .lead .mount, .body-plates.n5 .lead .mount { aspect-ratio: 1; --ratio: 1; flex: none; }
-  .body-plates.n2 .plate:not(.lead) { grid-column: span 2; }
-  .body-plates.n2 .plate:not(.lead) .mount { --ratio: 8 / 5; }
-  .plates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hang-l { --row: 15rem; }
+  .hang-m { --row: 9.5rem; }
+  .hang-s { --row: 8.5rem; }
   .plate-title { font-size: 0.95rem; }
   .plate-meta, .plate-status { font-size: 0.72rem; }
-  .avail-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .archive-tools { position: static; }
   .filter-groups { flex-wrap: nowrap; overflow-x: auto; margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); gap: 1.4rem; scrollbar-width: none; }
   .filter-group { flex-wrap: nowrap; white-space: nowrap; }
-  .is-list .plate a { grid-template-columns: 3.75rem minmax(0, 1fr); gap: 0.15rem 0.9rem; }
-  .is-list .plate .mount { grid-row: span 3; }
+  .is-list .plate a { grid-template-columns: 3.75rem minmax(0, 1fr); gap: 0.1rem 0.9rem; }
+  .is-list .art { width: 3.75rem; height: 3.75rem; grid-row: span 3; }
   .is-list .plate-cap > * { grid-column: 2; }
   .is-list .plate-extra { display: none; }
   .is-list .plate-status { justify-self: start; }
-  .mount-stage { height: auto; aspect-ratio: 4 / 5; }
-  .related .plates { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .work-nav { grid-template-columns: 1fr 1fr; }
   .work-nav .work-nav-all { display: none; }
   .available a { grid-template-columns: 1fr auto; gap: 0.4rem 1rem; }

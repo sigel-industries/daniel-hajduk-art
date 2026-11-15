@@ -49,13 +49,13 @@ const groups = [
     </div>
   </div>
 
-  <ul class="plates" data-items>
+  <ul class="hang hang-m" data-items>
     {rows.map(({ w, v, cat, grp, cap }, i) => {
       const d = w.data;
       const text = [d.title, d.technique, d.materials, d.series, cat.label, grp?.title].filter(Boolean).join(' ').toLowerCase();
       const status = d.availability === 'available' ? `${AVAILABILITY_LABEL.available}${d.price ? `, ${formatPrice(d.price.amount, d.price.currency)}` : ''}` : d.availability ? AVAILABILITY_LABEL[d.availability] : '';
       return (
-        <li class="plate" data-c={cat.id} data-g={grp?.id ?? ''} data-p={decade(d.year)} data-s={d.availability ?? ''} data-text={text}>
+        <li class="plate" style={`--r:${(d.cover.width / d.cover.height).toFixed(4)}`} data-c={cat.id} data-g={grp?.id ?? ''} data-p={decade(d.year)} data-s={d.availability ?? ''} data-text={text}>
           <a href={workUrl(d.category, w.id)} {...v}>
             <Mount src={d.cover} alt={d.coverAlt} sizes="(max-width: 40rem) 46vw, (max-width: 70rem) 30vw, 22vw" eager={i < 8} />
             <span class="plate-cap">
