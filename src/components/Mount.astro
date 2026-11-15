@@ -1,0 +1,25 @@
+---
+/**
+ * The one way a work is shown anywhere on the site: centred, whole and
+ * uncropped on a neutral mount of fixed proportions, with an even margin.
+ * The mount, not the photograph, defines the grid, so any format, colour or
+ * medium sits in the same rhythm.
+ */
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  sizes: string;
+  eager?: boolean;
+  /** mount proportions; 4/5 everywhere by default */
+  ratio?: string;
+  class?: string;
+}
+const { src, alt, sizes, eager = false, ratio, class: cls } = Astro.props;
+const wide = src.width / src.height;
+---
+<span class:list={['mount', cls]} style={ratio ? `--ratio:${ratio}` : undefined} data-shape={wide > 1.15 ? 'wide' : wide < 0.85 ? 'tall' : 'square'}>
+  <Picture src={src} alt={alt} widths={[360, 560, 800, 1100, 1500, 2000]} sizes={sizes} formats={['avif', 'webp']} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+</span>

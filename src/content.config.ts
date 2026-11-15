@@ -1,6 +1,5 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
-import { CATEGORY_IDS } from './data/site';
 
 /**
  * One Markdown file per artwork in src/content/works/.
@@ -12,7 +11,10 @@ const works = defineCollection({
   schema: ({ image }) =>
     z.object({
       title: z.string(),
-      category: z.enum(CATEGORY_IDS),
+      /** id of an entry in src/content/categories/ (e.g. paintings) */
+      category: z.string(),
+      /** id of an entry in src/content/groups/: the body of work it belongs to */
+      group: z.string().optional(),
       year: z.union([z.number(), z.string()]).optional(),
       technique: z.string().optional(),
       materials: z.string().optional(),
@@ -39,7 +41,7 @@ const works = defineCollection({
       /** close crops of the work (brushwork, surface, fragments); used as floating fragments */
       details: z.array(z.object({ src: image(), alt: z.string() })).default([]),
       selected: z.boolean().default(false),
-      /** shown large and alone in the archive, and opens the sequence */
+      /** leads its body of work on the home page */
       featured: z.boolean().default(false),
       order: z.number().default(100),
       summary: z.string().optional(),
@@ -47,4 +49,16 @@ const works = defineCollection({
     }),
 });
 
-export const collections = { works };
+/** Categories (disciplines). Add a JSON file to add a category; no code changes. */
+const categories = defineCollection({
+  loader: glob({ pattern: '*.json', base: './src/content/categories' }),
+  schema: z.object({ label: z.string(), singular: z.string(), intro: z.string().optional(), order: z.number().default(100) }),
+});
+
+/** Bodies of work (series, themes, periods). Shown as sections on the home page and as a filter. */
+const groups = defineCollection({
+  loader: glob({ pattern: '*.json', base: './src/content/groups' }),
+  schema: z.object({ title: z.string(), intro: z.string().optional(), order: z.number().default(100) }),
+});
+
+export const collections = { works, categories, groups };

@@ -3,12 +3,12 @@ import Archive from './Archive.astro';
 import Viewer from './Viewer.astro';
 import type { Work } from '../lib/works';
 
-interface Props { works: Work[]; title?: string; intro?: string; preset?: { d?: string; s?: string } }
+interface Props { works: Work[]; title?: string; intro?: string; preset?: Record<string, string> }
 const { works, title = 'Archive', intro, preset } = Astro.props;
 ---
 <header class="page-head">
   <h1 class="page-title">{title}</h1>
-  <p class="page-intro">{intro ?? 'The complete record of works, earlier and recent. Filter by discipline, period or availability, or search by title.'}</p>
+  <p class="page-intro">{intro ?? 'The complete record of works, earlier and recent. Filter, search or switch to a list.'}</p>
 </header>
 <Archive works={works} preset={preset} />
 <Viewer />

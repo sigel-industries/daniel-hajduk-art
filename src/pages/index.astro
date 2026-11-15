@@ -1,58 +1,55 @@
 ---
-import { Picture } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Selected from '../components/Selected.astro';
+import Mount from '../components/Mount.astro';
+import BodiesOfWork from '../components/BodiesOfWork.astro';
 import Viewer from '../components/Viewer.astro';
+import { SITE, AVAILABILITY_LABEL } from '../data/site';
+import { getWorks } from '../lib/works';
+import { sequence } from '../lib/curation';
 import { viewerAttrs } from '../lib/viewer';
-import { SITE, CATEGORIES } from '../data/site';
-import { getWorks, getSelectedWorks } from '../lib/works';
-import { sequence, profile } from '../lib/curation';
+import { captionOf } from '../lib/taxonomy';
 import { url, workUrl, formatPrice } from '../lib/url';
 
 const all = await getWorks();
-const chosen = await getSelectedWorks();
-const ordered = await sequence(chosen.length ? chosen : all.slice(0, 8));
-const lead = ordered.find((w) => w.data.category === 'paintings') ?? ordered[0];
-const shown = ordered.filter((w) => w.id !== lead.id);
-const leadTone = (await profile(lead)).tone;
+// opening work: the first featured work, otherwise the first selected one
+const lead = (await sequence(all.filter((w) => w.data.featured))).at(0) ?? all.find((w) => w.data.selected) ?? all[0];
 const leadV = await viewerAttrs(lead);
+const leadCap = await captionOf(lead, false);
 const available = all.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
-const disciplines = CATEGORIES.filter((c) => all.some((w) => w.data.category === c.id)).map((c) => c.label.toLowerCase());
+const availableItems = await Promise.all(available.map(async (w) => ({ w, v: await viewerAttrs(w), cap: await captionOf(w) })));
 ---
 <Base current="home">
   <section class="opening" aria-labelledby="hero-name">
     <div class="opening-text">
       <h1 class="hero-name" id="hero-name"><span>Daniel</span> <em>Hajduk</em></h1>
       <p class="opening-line">Painting, sculpture, photography and other visual work. Studio in {SITE.location}.</p>
-      <a class="opening-link" href="#selected">Selected works</a>
+      <p class="opening-links"><a href="#bodies">Selected works</a><a href={url('/works/')}>Archive · {all.length} works</a></p>
     </div>
-    <figure class="opening-work" style={`--tone:${leadTone}`}>
+    <figure class="opening-work plate">
       <a href={workUrl(lead.data.category, lead.id)} {...leadV}>
-        <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[700, 1100, 1600, 2000]} sizes="(max-width: 48rem) 100vw, 55vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+        <Mount src={lead.data.cover} alt={lead.data.coverAlt} sizes="(max-width: 60rem) 100vw, 50vw" eager />
       </a>
-      <figcaption>{lead.data.title}</figcaption>
+      <figcaption class="plate-cap"><span class="plate-title">{lead.data.title}</span><span class="plate-meta">{leadCap}</span></figcaption>
     </figure>
   </section>
 
-  <section class="works-section" id="selected" aria-labelledby="selected-title">
-    <div class="works-head">
-      <h2 id="selected-title">Selected works</h2>
-      <a class="quiet-link" href={url('/works/')}>Archive of all {all.length} works</a>
-    </div>
-    <Selected works={shown} />
-  </section>
+  <div id="bodies" class="bodies">
+    <BodiesOfWork works={all} exclude={lead.id} />
+  </div>
 
   {available.length > 0 && (
     <section class="avail" aria-labelledby="avail-title">
-      <h2 id="avail-title">Available now</h2>
-      <ul>
-        {available.map((w) => (
-          <li>
-            <a href={workUrl(w.data.category, w.id)}>
-              <span class="avail-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[200, 400]} sizes="6rem" formats={['avif', 'webp']} /></span>
-              <span class="avail-title">{w.data.title}</span>
-              <span class="avail-meta">{[w.data.technique, w.data.dimensions].filter(Boolean).join(', ')}</span>
-              <span class="avail-price">{w.data.price ? formatPrice(w.data.price.amount, w.data.price.currency) : 'On request'}</span>
+      <header class="body-head"><h2 id="avail-title">Available now</h2><a class="quiet-link" href={url('/available/')}>View available works</a></header>
+      <ul class="avail-list">
+        {availableItems.map(({ w, v, cap }) => (
+          <li class="plate">
+            <a href={workUrl(w.data.category, w.id)} {...v}>
+              <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 40vw, 14rem" />
+              <span class="plate-cap">
+                <span class="plate-title">{w.data.title}</span>
+                <span class="plate-meta">{cap}</span>
+                <span class="plate-status sale">{w.data.price ? formatPrice(w.data.price.amount, w.data.price.currency) : AVAILABILITY_LABEL[w.data.availability!]}</span>
+              </span>
             </a>
           </li>
         ))}
@@ -60,14 +57,9 @@ const disciplines = CATEGORIES.filter((c) => all.some((w) => w.data.category ===
     </section>
   )}
 
-  <section class="archive-invite" aria-labelledby="archive-title">
-    <h2 id="archive-title"><a href={url('/works/')}>Archive</a></h2>
-    <p>All {all.length} works — {disciplines.join(', ')} — searchable by discipline, period and availability.</p>
-  </section>
-
   <section class="closing" aria-label="About">
     <p class="closing-statement">Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
-    <p class="closing-links"><a href={url('/about/')}>About the artist</a><a href={url('/contact/')}>Contact</a></p>
+    <p class="closing-links"><a href={url('/works/')}>Archive</a><a href={url('/about/')}>About the artist</a><a href={url('/contact/')}>Contact</a></p>
   </section>
   <Viewer />
 </Base>

@@ -1,40 +1,33 @@
 ---
 /**
- * The archive: every work, in a calm automatic sequence.
- * - Grid: centred rows of equal height (proportions kept, nothing cropped);
- *   works marked `featured` get a wall to themselves.
- * - List: compact rows with thumbnail and facts, for finding a work quickly.
- * - Filters appear only for data that exists: discipline, period (decade, from
- *   `year`), series, availability, plus a search. The state is kept in the URL,
- *   so a filtered view can be shared or returned to.
- * Works without JavaScript: everything is simply shown.
+ * The archive: every work on identical mounts in a regular grid, or as a list.
+ * Order is automatic (src/lib/curation.ts). Filters are generated from the data:
+ * category, body of work, period (decade from `year`), availability, plus search.
+ * Filters, search and view are independent and kept in the URL; both views show
+ * exactly the same set of works. Without JavaScript everything is shown.
  */
-import { Picture } from 'astro:assets';
+import Mount from './Mount.astro';
 import type { Work } from '../lib/works';
-import { sequence, profile } from '../lib/curation';
+import { sequence } from '../lib/curation';
 import { viewerAttrs } from '../lib/viewer';
-import { CATEGORIES, AVAILABILITY_LABEL } from '../data/site';
+import { getCategories, getGroups, categoryOf, groupOf, captionOf } from '../lib/taxonomy';
+import { AVAILABILITY_LABEL } from '../data/site';
 import { workUrl, formatPrice } from '../lib/url';
 
-interface Props { works: Work[]; preset?: { d?: string; s?: string } }
+interface Props { works: Work[]; preset?: Record<string, string> }
 const { preset = {} } = Astro.props;
 const works = await sequence(Astro.props.works);
-const rows = await Promise.all(works.map(async (w) => ({ w, p: await profile(w), v: await viewerAttrs(w) })));
-
 const decade = (y: unknown) => { const n = parseInt(String(y ?? ''), 10); return Number.isFinite(n) ? `${Math.floor(n / 10) * 10}s` : ''; };
-const count = <T,>(vals: T[]) => vals.reduce((m, v) => m.set(v, (m.get(v) ?? 0) + 1), new Map<T, number>());
+const rows = await Promise.all(works.map(async (w) => ({ w, v: await viewerAttrs(w), cat: await categoryOf(w), grp: await groupOf(w), cap: await captionOf(w, false) })));
 
-const disciplines = CATEGORIES.map((c) => ({ id: c.id, label: c.label, n: works.filter((w) => w.data.category === c.id).length })).filter((c) => c.n);
-const periods = [...count(works.map((w) => decade(w.data.year)).filter(Boolean))].sort((a, b) => b[0].localeCompare(a[0]));
-const series = [...count(works.map((w) => w.data.series).filter(Boolean) as string[])].sort();
-const statuses = [...count(works.map((w) => w.data.availability).filter(Boolean) as string[])];
+const tally = (vals: string[]) => vals.reduce((m, v) => (v ? m.set(v, (m.get(v) ?? 0) + 1) : m), new Map<string, number>());
+const catN = tally(rows.map((r) => r.cat.id)), grpN = tally(rows.map((r) => r.grp?.id ?? '')), perN = tally(rows.map((r) => decade(r.w.data.year))), avN = tally(rows.map((r) => r.w.data.availability ?? ''));
 const groups = [
-  { key: 'd', label: 'Discipline', opts: disciplines.map((c) => ({ v: c.id, label: c.label, n: c.n })) },
-  { key: 'p', label: 'Period', opts: periods.map(([v, n]) => ({ v, label: v, n })) },
-  { key: 'r', label: 'Series', opts: series.map(([v, n]) => ({ v, label: v, n })) },
-  { key: 's', label: 'Availability', opts: statuses.map(([v, n]) => ({ v, label: AVAILABILITY_LABEL[v], n })) },
-].filter((g) => g.opts.length > (g.key === 'd' ? 1 : 0));
-const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.singular, w.data.year, w.data.dimensions].filter(Boolean).join(', ');
+  { key: 'c', label: 'Category', opts: (await getCategories()).filter((c) => catN.has(c.id)).map((c) => ({ v: c.id, label: c.label, n: catN.get(c.id)! })) },
+  { key: 'g', label: 'Body of work', opts: (await getGroups()).filter((g) => grpN.has(g.id)).map((g) => ({ v: g.id, label: g.title, n: grpN.get(g.id)! })) },
+  { key: 'p', label: 'Period', opts: [...perN].sort((a, b) => b[0].localeCompare(a[0])).map(([v, n]) => ({ v, label: v, n })) },
+  { key: 's', label: 'Availability', opts: [...avN].map(([v, n]) => ({ v, label: AVAILABILITY_LABEL[v] ?? v, n })) },
+].filter((g) => g.opts.length > 1 || (g.key === 's' && g.opts.length > 0));
 ---
 <div class="archive" data-archive data-preset={JSON.stringify(preset)}>
   <div class="archive-tools">
@@ -47,7 +40,7 @@ const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.sin
       ))}
     </div>
     <div class="archive-bar">
-      <label class="search"><span class="visually-hidden">Search works</span><input type="search" placeholder="Search" data-search /></label>
+      <label class="search"><span class="visually-hidden">Search works</span><input type="search" placeholder="Search title, technique…" data-search /></label>
       <p class="result-count" aria-live="polite" data-count>{works.length} works</p>
       <div class="view-toggle" role="group" aria-label="View">
         <button type="button" data-view="grid" aria-pressed="true">Grid</button>
@@ -56,27 +49,20 @@ const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.sin
     </div>
   </div>
 
-  <ul class="collection" data-items>
-    {rows.map(({ w, p, v }, i) => {
+  <ul class="plates" data-items>
+    {rows.map(({ w, v, cat, grp, cap }, i) => {
       const d = w.data;
-      const r = d.cover.width / d.cover.height;
-      const forSale = d.availability === 'available';
-      const text = [d.title, d.technique, d.materials, d.series, CATEGORIES.find((c) => c.id === d.category)!.label].filter(Boolean).join(' ').toLowerCase();
+      const text = [d.title, d.technique, d.materials, d.series, cat.label, grp?.title].filter(Boolean).join(' ').toLowerCase();
+      const status = d.availability === 'available' ? `${AVAILABILITY_LABEL.available}${d.price ? `, ${formatPrice(d.price.amount, d.price.currency)}` : ''}` : d.availability ? AVAILABILITY_LABEL[d.availability] : '';
       return (
-        <li
-          class:list={{ feature: d.featured }}
-          style={`--r:${r.toFixed(3)};--tone:${p.tone}`}
-          data-d={d.category} data-p={decade(d.year)} data-r={d.series ?? ''} data-s={d.availability ?? ''} data-text={text}
-        >
+        <li class="plate" data-c={cat.id} data-g={grp?.id ?? ''} data-p={decade(d.year)} data-s={d.availability ?? ''} data-text={text}>
           <a href={workUrl(d.category, w.id)} {...v}>
-            <span class="c-img">
-              <Picture src={d.cover} alt={d.coverAlt} widths={[400, 700, 1000, 1500, 2000]} sizes={d.featured ? '(max-width: 48rem) 100vw, 70vw' : '(max-width: 48rem) 100vw, 30vw'} formats={['avif', 'webp']} loading={i < 6 ? 'eager' : 'lazy'} decoding="async" />
-            </span>
-            <span class="c-cap">
-              <span class="c-title">{d.title}</span>
-              <span class="c-meta">{meta(w)}</span>
-              <span class="c-list-extra">{[d.technique, d.series].filter(Boolean).join(', ')}</span>
-              <span class="c-status">{forSale ? <span class="c-sale">{AVAILABILITY_LABEL.available}{d.price ? `, ${formatPrice(d.price.amount, d.price.currency)}` : ''}</span> : d.availability ? AVAILABILITY_LABEL[d.availability] : ''}</span>
+            <Mount src={d.cover} alt={d.coverAlt} sizes="(max-width: 40rem) 46vw, (max-width: 70rem) 30vw, 22vw" eager={i < 8} />
+            <span class="plate-cap">
+              <span class="plate-title">{d.title}</span>
+              <span class="plate-meta">{cap}</span>
+              <span class="plate-extra">{[d.technique ?? d.materials, grp?.title].filter(Boolean).join(' · ')}</span>
+              {status && <span class:list={['plate-status', { sale: d.availability === 'available' }]}>{status}</span>}
             </span>
           </a>
         </li>
@@ -95,34 +81,33 @@ const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.sin
     const search = root.querySelector<HTMLInputElement>('[data-search]')!;
     const countEl = root.querySelector<HTMLElement>('[data-count]')!;
     const empty = root.querySelector<HTMLElement>('[data-empty]')!;
-    const list = root.querySelector<HTMLElement>('[data-items]')!;
     const views = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-view]'));
-    const state: Record<string, Set<string>> = { d: new Set(), p: new Set(), r: new Set(), s: new Set() };
-    let q = '';
-
+    const keys = ['c', 'g', 'p', 's'];
+    const state: Record<string, Set<string>> = Object.fromEntries(keys.map((k) => [k, new Set<string>()]));
     const params = new URLSearchParams(location.search);
     const preset = JSON.parse(root.dataset.preset || '{}');
-    for (const k of Object.keys(state)) (params.get(k) ?? preset[k] ?? '').split(',').filter(Boolean).forEach((v: string) => state[k].add(v));
-    q = params.get('q') ?? '';
+    for (const k of keys) (params.get(k) ?? preset[k] ?? '').split(',').filter(Boolean).forEach((v: string) => state[k].add(v));
+    let q = (params.get('q') ?? '').toLowerCase();
     search.value = q;
-    let view = params.get('view') === 'list' || localStorage.getItem('archive-view') === 'list' ? 'list' : 'grid';
+    let stored = '';
+    try { stored = localStorage.getItem('archive-view') || ''; } catch {}
+    let view = (params.get('view') || stored) === 'list' ? 'list' : 'grid';
 
     const apply = (push = true) => {
       let n = 0;
       for (const it of items) {
-        const ok = Object.entries(state).every(([k, set]) => !set.size || set.has(it.dataset[k] || '')) && (!q || (it.dataset.text || '').includes(q));
+        const ok = keys.every((k) => !state[k].size || state[k].has(it.dataset[k] || '')) && (!q || (it.dataset.text || '').includes(q));
         it.hidden = !ok;
         if (ok) n++;
       }
       chips.forEach((c) => c.setAttribute('aria-pressed', String(state[c.dataset.key!].has(c.dataset.value!))));
       countEl.textContent = n === items.length ? `${n} works` : `${n} of ${items.length} works`;
       empty.hidden = n > 0;
-      list.dataset.view = view;
       root.classList.toggle('is-list', view === 'list');
       views.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
       if (push) {
         const p = new URLSearchParams();
-        for (const [k, set] of Object.entries(state)) if (set.size) p.set(k, [...set].join(','));
+        for (const k of keys) if (state[k].size) p.set(k, [...state[k]].join(','));
         if (q) p.set('q', q);
         if (view === 'list') p.set('view', 'list');
         history.replaceState(history.state, '', `${location.pathname}${p.toString() ? '?' + p : ''}`);
@@ -135,7 +120,7 @@ const meta = (w: Work) => [CATEGORIES.find((c) => c.id === w.data.category)!.sin
     }));
     search.addEventListener('input', () => { q = search.value.trim().toLowerCase(); apply(); });
     views.forEach((b) => b.addEventListener('click', () => { view = b.dataset.view!; try { localStorage.setItem('archive-view', view); } catch {} apply(); }));
-    root.querySelector('[data-reset]')!.addEventListener('click', () => { Object.values(state).forEach((s) => s.clear()); q = ''; search.value = ''; apply(); });
+    root.querySelector('[data-reset]')!.addEventListener('click', () => { keys.forEach((k) => state[k].clear()); q = ''; search.value = ''; apply(); });
     apply(false);
   }
   document.addEventListener('astro:page-load', initArchive);

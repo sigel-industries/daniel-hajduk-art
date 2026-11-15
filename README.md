@@ -108,6 +108,25 @@ scripts/check-links.mjs post-build checks
 - Photos may be cropped or re-ordered; the work itself is never retouched or altered.
 - No invented biography, exhibitions, awards or symbolism.
 
+## Categories and bodies of work (CMS-ready)
+
+Nothing about categories or groups is written into the layout.
+
+- `src/content/categories/<id>.json` — a discipline: `{ "label", "singular", "intro", "order" }`.
+  Add a file to add a category (e.g. drawings); it appears in filters, pages and captions.
+- `src/content/groups/<id>.json` — a body of work (series, theme, period): `{ "title", "intro", "order" }`.
+  Each group becomes a section on the home page and a filter in the archive.
+- A work refers to them by id: `category: paintings`, `group: landscapes`. An unknown id stops
+  the build with a message saying which file to add.
+
+These are plain files with a fixed schema, so a Git-based CMS (Decap, TinaCMS, Pages CMS…) can
+edit them directly: upload a photo, pick category and group, fill in the facts, save.
+
+## How works are shown
+
+Every work, everywhere, is shown whole on a neutral mount of fixed proportions (`Mount.astro`),
+never cropped or stretched. The mounts form the grid, so any format, colour or medium fits.
+
 ## How works are arranged
 
 Nobody has to place works by hand. At build time every cover photo is measured

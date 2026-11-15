@@ -66,7 +66,6 @@
     const show = (i: number) => {
       index = (i + items.length) % items.length;
       const a = items[index];
-      frame.style.setProperty('--tone', a.dataset.tone || '#dedbd5');
       frame.style.setProperty('--r', a.dataset.r || '1');
       img.classList.remove('is-loaded');
       img.onload = () => img.classList.add('is-loaded');

@@ -15,16 +15,6 @@ export const SITE = {
   social: [] as { label: string; url: string }[],
 };
 
-export const CATEGORIES = [
-  { id: 'paintings', label: 'Paintings', singular: 'Painting', intro: 'Works on canvas, panel and paper.' },
-  { id: 'sculptures', label: 'Sculptures', singular: 'Sculpture', intro: 'Sculptural and spatial works.' },
-  { id: 'photography', label: 'Photography', singular: 'Photography', intro: 'Photographic work.' },
-  { id: 'other', label: 'Other works', singular: 'Other work', intro: 'Experimental and mixed-media work.' },
-] as const;
-
-export type CategoryId = (typeof CATEGORIES)[number]['id'];
-export const CATEGORY_IDS = CATEGORIES.map((c) => c.id) as [CategoryId, ...CategoryId[]];
-
 export const AVAILABILITY_LABEL: Record<string, string> = {
   available: 'Available',
   sold: 'Sold',

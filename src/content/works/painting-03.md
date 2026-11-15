@@ -2,6 +2,7 @@
 # TODO(confirm): title, year, technique, dimensions, availability
 title: Untitled No. 3
 category: paintings
+group: landscapes
 cover: ./paintings/p03.jpg
 coverAlt: Night meadow with orange flower heads and pink, violet and white plants
 details:

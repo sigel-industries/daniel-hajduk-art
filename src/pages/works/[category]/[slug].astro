@@ -2,10 +2,11 @@
 import { render } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import Gallery from '../../../components/Gallery.astro';
-import { CATEGORIES, SITE, AVAILABILITY_LABEL } from '../../../data/site';
+import { SITE, AVAILABILITY_LABEL } from '../../../data/site';
+import { categoryOf, groupOf } from '../../../lib/taxonomy';
+import Mount from '../../../components/Mount.astro';
 import { getWorks, type Work } from '../../../lib/works';
-import { sequence, profile } from '../../../lib/curation';
-import { Picture } from 'astro:assets';
+import { sequence } from '../../../lib/curation';
 import { url, workUrl, formatPrice } from '../../../lib/url';
 import { t } from '../../../i18n/ui';
 
@@ -21,14 +22,12 @@ const next = all.length > 1 ? all[(at + 1) % all.length] : null;
 const prev = all.length > 1 ? all[(at - 1 + all.length) % all.length] : null;
 // related: same series first, then same discipline, in the curated sequence
 const pool = all.filter((w) => w.id !== work.id);
-const related = (await sequence([
-  ...pool.filter((w) => work.data.series && w.data.series === work.data.series),
-  ...pool.filter((w) => w.data.category === work.data.category && !(work.data.series && w.data.series === work.data.series)),
-])).slice(0, 4);
-const relatedTones = await Promise.all(related.map((w) => profile(w).then((p) => p.tone)));
+const same = (w: Work) => (work.data.group && w.data.group === work.data.group) || (work.data.series && w.data.series === work.data.series);
+const related = (await sequence([...pool.filter(same), ...pool.filter((w) => !same(w) && w.data.category === work.data.category)])).slice(0, 4);
 const d = work.data;
 const { Content } = await render(work);
-const category = CATEGORIES.find((c) => c.id === d.category)!;
+const category = await categoryOf(work);
+const group = await groupOf(work);
 const images = d.images.length ? d.images : [{ src: d.cover, alt: d.coverAlt }];
 const description = d.summary ?? `${d.title}, ${category.label.toLowerCase()} by ${SITE.name}.`;
 
@@ -53,7 +52,8 @@ const jsonLd = {
         <p class="wc-artist">{SITE.name}</p>
         <h1 class="wc-title" id="work-title">{d.title}</h1>
         <dl class="facts">
-          <div><dt>Discipline</dt><dd><a href={url(`/works/${category.id}/`)}>{category.singular}</a></dd></div>
+          <div><dt>Category</dt><dd><a href={url(`/works/${category.id}/`)}>{category.singular}</a></dd></div>
+          {group && <div><dt>Body of work</dt><dd><a href={url(`/works/?g=${group.id}`)}>{group.title}</a></dd></div>}
           {d.year && <div><dt>{t('work.year')}</dt><dd>{d.year}</dd></div>}
           {d.technique && <div><dt>{t('work.technique')}</dt><dd>{d.technique}</dd></div>}
           {d.materials && <div><dt>{t('work.materials')}</dt><dd>{d.materials}</dd></div>}
@@ -78,13 +78,13 @@ const jsonLd = {
 
     {related.length > 0 && (
       <section class="related" aria-labelledby="related-title">
-        <h2 id="related-title">{work.data.series ? `More from ${work.data.series}` : `More ${category.label.toLowerCase()}`}</h2>
-        <ul>
-          {related.map((w, i) => (
-            <li style={`--r:${(w.data.cover.width / w.data.cover.height).toFixed(3)};--tone:${relatedTones[i]}`}>
+        <h2 id="related-title">{group ? `More from ${group.title}` : `More ${category.label.toLowerCase()}`}</h2>
+        <ul class="plates">
+          {related.map((w) => (
+            <li class="plate">
               <a href={workUrl(w.data.category, w.id)}>
-                <span class="c-img"><Picture src={w.data.cover} alt={w.data.coverAlt} widths={[300, 600]} sizes="(max-width: 48rem) 45vw, 20vw" formats={['avif', 'webp']} decoding="async" /></span>
-                <span class="c-title">{w.data.title}</span>
+                <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 46vw, 22vw" />
+                <span class="plate-cap"><span class="plate-title">{w.data.title}</span></span>
               </a>
             </li>
           ))}

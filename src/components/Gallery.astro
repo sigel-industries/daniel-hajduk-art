@@ -17,7 +17,7 @@ const large = await Promise.all(all.map((i) => getImage({ src: i.src, width: 200
 ---
 <div class="work-gallery" data-gallery>
   <div class="work-top">
-    <button class="gallery-item work-main" type="button" data-full={large[0].src} data-alt={first.alt} aria-label={`${t('gallery.open')}: ${first.alt}`}>
+    <button class="gallery-item work-main mount mount-stage" type="button" data-full={large[0].src} data-alt={first.alt} aria-label={`${t('gallery.open')}: ${first.alt}`}>
       <Picture src={first.src} alt={first.alt} widths={[640, 1000, 1500]} sizes="(max-width: 48rem) 100vw, 60vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
     </button>
     <slot name="caption" />
@@ -29,7 +29,7 @@ const large = await Promise.all(all.map((i) => getImage({ src: i.src, width: 200
         {rest.map((img, i) => (
           <li class:list={{ detail: img.detail }}>
             <button class="gallery-item" type="button" data-full={large[i + 1].src} data-alt={img.alt} aria-label={`${t('gallery.open')}: ${img.alt}`}>
-              <span class="strip-img" ><Picture src={img.src} alt={img.alt} widths={[400, 700, 1000]} sizes="(max-width: 48rem) 66vw, 26vw" formats={['avif', 'webp']} /></span>
+              <span class="strip-img mount"><Picture src={img.src} alt={img.alt} widths={[400, 700, 1000]} sizes="(max-width: 48rem) 66vw, 26vw" formats={['avif', 'webp']} /></span>
             </button>
             <span class="strip-label" aria-hidden="true">{img.detail ? 'Detail' : 'View'}</span>
           </li>

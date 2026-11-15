@@ -1,17 +1,17 @@
 ---
 import Base from '../../../layouts/Base.astro';
 import WorksIndex from '../../../components/WorksIndex.astro';
-import { CATEGORIES } from '../../../data/site';
 import { getWorks } from '../../../lib/works';
+import { getCategories } from '../../../lib/taxonomy';
 
-// Only disciplines that contain works get a page; it is the archive, pre-filtered.
+// One page per category that has works: the archive, pre-filtered.
 export async function getStaticPaths() {
   const works = await getWorks();
-  return CATEGORIES.filter((c) => works.some((w) => w.data.category === c.id)).map((c) => ({ params: { category: c.id }, props: { category: c } }));
+  return (await getCategories()).filter((c) => works.some((w) => w.data.category === c.id)).map((c) => ({ params: { category: c.id }, props: { category: c } }));
 }
 const { category } = Astro.props;
 const works = await getWorks();
 ---
-<Base title={category.label} current="works" description={`${category.label} by Daniel Hajduk. ${category.intro}`}>
-  <WorksIndex works={works} title={category.label} intro={category.intro} preset={{ d: category.id }} />
+<Base title={category.label} current="works" description={`${category.label} by Daniel Hajduk.${category.intro ? ' ' + category.intro : ''}`}>
+  <WorksIndex works={works} title={category.label} intro={category.intro} preset={{ c: category.id }} />
 </Base>

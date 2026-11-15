@@ -1,6 +1,7 @@
 ---
 title: ANGEL
 category: sculptures
+group: sculpture
 # year: TODO(confirm) — add the year the work was created
 technique: 3D print, hand-applied acrylic surface finish
 materials: PLA, acrylic
