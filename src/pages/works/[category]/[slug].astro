@@ -10,6 +10,7 @@ import { getWorks, type Work } from '../../../lib/works';
 import { sequence } from '../../../lib/curation';
 import { url, workUrl, formatPrice } from '../../../lib/url';
 import { t } from '../../../i18n/ui';
+import { inches } from '../../../lib/label';
 
 export async function getStaticPaths() {
   const works = await getWorks();
@@ -49,23 +50,27 @@ const jsonLd = {
 <Base title={d.title} description={description} image={d.cover} imageAlt={d.coverAlt} current="works" jsonLd={jsonLd}>
   <article class="work" aria-labelledby="work-title">
     <Gallery images={images} details={d.details} title={d.title}>
-      <div class="work-caption" slot="caption">
-        <p class="wc-artist">{SITE.name}</p>
-        <h1 class="wc-title" id="work-title">{d.title}</h1>
-        <dl class="facts">
-          <div><dt>Category</dt><dd><a href={url(`/works/${category.id}/`)}>{category.singular}</a></dd></div>
-          {group && <div><dt>Body of work</dt><dd><a href={url(`/works/?g=${group.id}`)}>{group.title}</a></dd></div>}
-          {d.year && <div><dt>{t('work.year')}</dt><dd>{d.year}</dd></div>}
-          {d.technique && <div><dt>{t('work.technique')}</dt><dd>{d.technique}</dd></div>}
-          {d.materials && <div><dt>{t('work.materials')}</dt><dd>{d.materials}</dd></div>}
-          {d.dimensions && <div><dt>{t('work.dimensions')}</dt><dd>{d.dimensions}</dd></div>}
-          {d.edition && <div><dt>{t('work.edition')}</dt><dd>{d.edition.size} numbered and signed copies</dd></div>}
-          {d.availability && <div><dt>{t('work.status')}</dt><dd><span class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}{d.availability === 'available' && d.edition && d.edition.available.length > 0 && `, copies ${d.edition.available.join(' and ')}`}</span></dd></div>}
-        </dl>
-        {d.price && d.availability === 'available' && <p class="wc-price">{formatPrice(d.price.amount, d.price.currency)}{d.price.note && <span> {d.price.note}</span>}</p>}
-        <div class="wc-actions">
-          {d.links.map((l) => <a class="btn" href={l.url} rel="noopener" target="_blank">{l.label}<span class="visually-hidden"> (opens in a new tab)</span></a>)}
-          <a class="btn ghost" href={SITE.email ? `mailto:${SITE.email}?subject=${encodeURIComponent(d.title)}` : url('/contact/')}>{t('work.enquire')}</a>
+      <div class="work-caption label" slot="caption">
+        <p class="label-artist">{SITE.name}</p>
+        <h1 class="label-heading" id="work-title"><em>{d.title}</em>{d.year && <span>, {d.year}</span>}</h1>
+        <div class="label-lines">
+          {(d.technique || d.materials) && <p>{[d.technique, d.materials].filter(Boolean).join(', ')}</p>}
+          {d.dimensions && <p>{d.dimensions}{inches(d.dimensions) && <span class="label-soft"> / {inches(d.dimensions)}</span>}</p>}
+          {d.edition && <p>Edition of {d.edition.size}, numbered and signed</p>}
+        </div>
+        <p class="label-where">
+          <a href={url(`/works/${category.id}/`)}>{category.singular}</a>
+          {group && <> · <a href={url(`/works/?g=${group.id}`)}>{group.title}</a></>}
+        </p>
+        <div class="label-sale">
+          {d.availability && <p class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}{d.availability === 'available' && d.edition && d.edition.available.length > 0 && `, copies ${d.edition.available.join(' and ')}`}</p>}
+          {d.price && d.availability === 'available'
+            ? <p class="label-price">{formatPrice(d.price.amount, d.price.currency)}{d.price.note && <span> {d.price.note}</span>}</p>
+            : (d.availability === 'available' || d.availability === 'on-request') && <p class="label-price">Price on request</p>}
+          <div class="wc-actions">
+            {d.links.map((l) => <a class="btn" href={l.url} rel="noopener" target="_blank">{l.label}<span class="visually-hidden"> (opens in a new tab)</span></a>)}
+            <a class="btn ghost" href={SITE.email ? `mailto:${SITE.email}?subject=${encodeURIComponent(d.title)}` : url('/contact/')}>{t('work.enquire')}</a>
+          </div>
         </div>
       </div>
     </Gallery>
@@ -96,7 +101,7 @@ const jsonLd = {
     {next && prev && (
       <nav class="work-nav" aria-label="More works">
         <a href={workUrl(prev.data.category, prev.id)}><span>Previous</span>{prev.data.title}</a>
-        <a href={url('/works/')} class="work-nav-all">Archive</a>
+        <a href={url('/works/')} class="work-nav-all">All works</a>
         <a href={workUrl(next.data.category, next.id)}><span>Next</span>{next.data.title}</a>
       </nav>
     )}

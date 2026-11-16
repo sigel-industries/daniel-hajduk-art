@@ -1,7 +1,7 @@
 ---
 import { fieldRatio } from '../lib/field';
 /**
- * Home page presentation: one section per body of work (src/content/groups/),
+ * Home page presentation: one room per body of work (src/content/groups/),
  * in their order. Each section shows the works marked `selected` (or, if none,
  * the first works of the group): up to four, hung on one line at the home page
  * scale (see .hang-line in global.css). Works without a group are
@@ -29,21 +29,25 @@ for (const g of [...groups, { id: '', title: 'Other works', order: 999 }]) {
   if (!shown.length) continue;
 
   const items = await Promise.all(shown.map(async (w) => ({ w, v: await viewerAttrs(w), cap: await captionOf(w, false) })));
-  sections.push({ g, total: all.length, items });
+  const years = all.map((w) => w.data.year).filter((y): y is number => typeof y === 'number');
+  const span = years.length ? (Math.min(...years) === Math.max(...years) ? `${years[0]}` : `${Math.min(...years)}–${Math.max(...years)}`) : '';
+  sections.push({ g, total: all.length, span, items });
 }
 ---
-{sections.map(({ g, total, items }, si) => (
-  <section class="body" aria-labelledby={`body-${si}`}>
-    <header class="body-head">
-      <h2 id={`body-${si}`}>{g.title}</h2>
-      {'intro' in g && g.intro && <p class="body-intro">{g.intro}</p>}
-      <a class="quiet-link" href={g.id ? url(`/works/?g=${g.id}`) : url('/works/')}>{total === 1 ? '1 work' : `All ${total} works`}</a>
+{sections.map(({ g, total, span, items }, si) => (
+  <section class="room" aria-labelledby={`room-${si}`}>
+    <header class="room-head">
+      <p class="room-no" aria-hidden="true">{String(si + 1).padStart(2, '0')}</p>
+      <h2 id={`room-${si}`}>{g.title}</h2>
+      <p class="room-facts">{total === 1 ? '1 work' : `${total} works`}{span && `, ${span}`}</p>
+      {'intro' in g && g.intro && <p class="room-intro">{g.intro}</p>}
+      <a class="room-link" href={g.id ? url(`/works/?g=${g.id}`) : url('/works/')}>Enter room</a>
     </header>
     <ul class="hang hang-l hang-line">
-      {items.map(({ w, v, cap }, i) => (
+      {items.map(({ w, v, cap }) => (
         <li class="plate" style={`--r:${fieldRatio(w.data.cover)}`}>
           <a href={workUrl(w.data.category, w.id)} {...v}>
-            <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 100vw, 50vw" eager={si === 0} />
+            <Mount src={w.data.cover} alt={w.data.coverAlt} sizes="(max-width: 40rem) 50vw, 30vw" />
             <span class="plate-cap"><span class="plate-title">{w.data.title}</span><span class="plate-meta">{cap}</span></span>
           </a>
         </li>

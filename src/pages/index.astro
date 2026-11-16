@@ -10,37 +10,42 @@ import { sequence } from '../lib/curation';
 import { viewerAttrs } from '../lib/viewer';
 import { captionOf } from '../lib/taxonomy';
 import { url, workUrl, formatPrice } from '../lib/url';
+import { Picture } from 'astro:assets';
 
 const all = await getWorks();
-// opening work: the first featured work, otherwise the first selected one
+// The entrance shows one work: the first featured work, otherwise the first selected one.
 const lead = (await sequence(all.filter((w) => w.data.featured))).at(0) ?? all.find((w) => w.data.selected) ?? all[0];
 const leadV = await viewerAttrs(lead);
-const leadCap = await captionOf(lead, false);
+const leadCap = await captionOf(lead);
 const available = all.filter((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
 const availableItems = await Promise.all(available.map(async (w) => ({ w, v: await viewerAttrs(w), cap: await captionOf(w) })));
 ---
-<Base current="home">
-  <section class="opening" aria-labelledby="hero-name">
-    <div class="opening-text">
-      <h1 class="hero-name" id="hero-name"><span>Daniel</span> <em>Hajduk</em></h1>
-      <p class="opening-line">Painting, sculpture, photography and other visual work. Studio in {SITE.location}.</p>
-      <p class="opening-links"><a href="#bodies">Selected works</a><a href={url('/works/')}>Archive · {all.length} works</a></p>
+<Base current="home" room>
+  <!-- Entrance: a dark viewing room with a single work, shown whole. -->
+  <section class="entrance" data-room aria-labelledby="hero-name" style={`--r:${(lead.data.cover.width / lead.data.cover.height).toFixed(4)}`}>
+    <a class="entrance-work" href={workUrl(lead.data.category, lead.id)} {...leadV}>
+      <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[560, 800, 1100, 1500, 2000, 2600]} sizes="(max-width: 40rem) 92vw, 70vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
+    </a>
+    <h1 class="entrance-name" id="hero-name"><span>Daniel</span> <em>Hajduk</em></h1>
+    <div class="entrance-label">
+      <p class="label-title">{lead.data.title}</p>
+      <p class="label-meta">{leadCap}</p>
     </div>
-    <figure class="opening-work plate" style={`--r:${fieldRatio(lead.data.cover)}`}>
-      <a href={workUrl(lead.data.category, lead.id)} {...leadV}>
-        <Mount src={lead.data.cover} alt={lead.data.coverAlt} sizes="(max-width: 60rem) 100vw, 50vw" eager />
-      </a>
-      <figcaption class="plate-cap"><span class="plate-title">{lead.data.title}</span><span class="plate-meta">{leadCap}</span></figcaption>
-    </figure>
+    <a class="entrance-enter" href="#rooms">Enter the gallery</a>
   </section>
 
-  <div id="bodies" class="bodies">
+  <div id="rooms" class="rooms">
+    <p class="rooms-intro">Painting, sculpture, photography and other visual work. Studio in {SITE.location}. <a href={url('/works/')}>All {all.length} works</a></p>
     <BodiesOfWork works={all} exclude={lead.id} />
   </div>
 
   {available.length > 0 && (
     <section class="avail" aria-labelledby="avail-title">
-      <header class="body-head"><h2 id="avail-title">Available now</h2><a class="quiet-link" href={url('/available/')}>View available works</a></header>
+      <header class="avail-head">
+        <h2 id="avail-title">Available</h2>
+        <p>Works that can be acquired now.</p>
+        <a class="quiet-link" href={url('/available/')}>All available works</a>
+      </header>
       <ul class="hang hang-s">
         {availableItems.map(({ w, v, cap }) => (
           <li class="plate" style={`--r:${fieldRatio(w.data.cover)}`}>
@@ -60,7 +65,7 @@ const availableItems = await Promise.all(available.map(async (w) => ({ w, v: awa
 
   <section class="closing" aria-label="About">
     <p class="closing-statement">Daniel Hajduk works across painting, sculpture and other visual techniques. Painting is the largest part of his work; his paintings have found collectors at home and abroad.</p>
-    <p class="closing-links"><a href={url('/works/')}>Archive</a><a href={url('/about/')}>About the artist</a><a href={url('/contact/')}>Contact</a></p>
+    <p class="closing-links"><a href={url('/about/')}>About the artist</a><a href={url('/contact/')}>Contact</a></p>
   </section>
   <Viewer />
 </Base>

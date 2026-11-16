@@ -6,6 +6,7 @@ import type { ImageMetadata } from 'astro';
 import { SITE } from '../data/site';
 import { t, type Lang } from '../i18n/ui';
 import { url } from '../lib/url';
+import { getWorks } from '../lib/works';
 import defaultOg from '../content/works/angel/angel-hero.jpg';
 
 interface Props {
@@ -14,21 +15,27 @@ interface Props {
   image?: ImageMetadata;
   imageAlt?: string;
   lang?: Lang;
-  current?: 'works' | 'about' | 'contact' | 'home';
+  current?: 'works' | 'available' | 'about' | 'contact' | 'home';
+  /** the page opens in a dark room (home entrance); the header turns light over it */
+  room?: boolean;
   jsonLd?: Record<string, unknown>;
 }
 
-const { title, description = SITE.description, image = defaultOg, imageAlt = 'ANGEL by Daniel Hajduk', lang = 'en', current = 'home', jsonLd } = Astro.props;
+const { title, description = SITE.description, image = defaultOg, imageAlt = 'ANGEL by Daniel Hajduk', lang = 'en', current = 'home', jsonLd, room = false } = Astro.props;
+// design preview build (branch next, served under /next/): not indexed, links back to the live site
+const preview = process.env.PREVIEW === '1';
 const pageTitle = title ? `${title} | ${SITE.title}` : SITE.title;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const og = await getImage({ src: image, width: 1200, format: 'jpg' });
 const ogUrl = new URL(og.src, Astro.site);
 
+const hasAvailable = (await getWorks()).some((w) => w.data.availability === 'available' || w.data.availability === 'on-request');
 const nav = [
   { key: 'works', href: url('/works/'), label: t('nav.works', lang) },
+  ...(hasAvailable ? [{ key: 'available', href: url('/available/'), label: 'Available' }] : []),
   { key: 'about', href: url('/about/'), label: t('nav.about', lang) },
   { key: 'contact', href: url('/contact/'), label: t('nav.contact', lang) },
-] as const;
+];
 
 const personLd = {
   '@context': 'https://schema.org',
@@ -49,6 +56,7 @@ const personLd = {
     <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
     <link rel="sitemap" href={url('/sitemap-index.xml')} />
     <meta name="theme-color" content="#ecebe7" />
+    {preview && <meta name="robots" content="noindex" />}
     <ClientRouter />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.title} />
@@ -61,9 +69,9 @@ const personLd = {
     <meta name="twitter:card" content="summary_large_image" />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd ?? personLd)} />
   </head>
-  <body>
+  <body class:list={{ 'has-room': room }}>
     <a class="skip-link" href="#main">{t('nav.skip', lang)}</a>
-    <header class="site-header">
+    <header class:list={['site-header', { 'on-room': room }]} data-header>
       <a class="site-mark" href={url('/')} aria-label={`${SITE.name}, home`}>{SITE.name}</a>
       <nav class="site-nav" aria-label="Main">
         <ul>
@@ -76,6 +84,7 @@ const personLd = {
     <main id="main">
       <slot />
     </main>
+    {preview && <a class="preview-flag" href={url('/').replace(/next\/$/, '')}>Design preview · view the current site</a>}
     <footer class="site-footer">
       <p>© {new Date().getFullYear()} {SITE.name}. {t('footer.rights', lang)}.</p>
       <p>
@@ -97,6 +106,18 @@ const personLd = {
         document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
       }
       document.addEventListener('astro:page-load', initReveal);
+
+      // Over the dark entrance the header is light; it turns back once the room is left.
+      function initHeader() {
+        const header = document.querySelector<HTMLElement>('[data-header]');
+        const room = document.querySelector<HTMLElement>('[data-room]');
+        if (!header || !room || !('IntersectionObserver' in window)) return;
+        const h = header.offsetHeight;
+        const io = new IntersectionObserver(([e]) => header.classList.toggle('on-room', e.isIntersecting), { rootMargin: `-${h}px 0px -${innerHeight - h - 1}px 0px` });
+        io.observe(room);
+        document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
+      }
+      document.addEventListener('astro:page-load', initHeader);
     </script>
   </body>
 </html>

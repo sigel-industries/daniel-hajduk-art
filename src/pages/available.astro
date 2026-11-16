@@ -5,6 +5,6 @@ import { getWorks } from '../lib/works';
 
 const works = await getWorks();
 ---
-<Base title="Available works" current="works" description="Works by Daniel Hajduk available for acquisition.">
+<Base title="Available works" current="available" description="Works by Daniel Hajduk available for acquisition.">
   <WorksIndex works={works} title="Available" intro="Works that can be acquired now. For anything else, please get in touch." preset={{ s: 'available' }} />
 </Base>

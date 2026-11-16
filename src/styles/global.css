@@ -21,6 +21,11 @@
   --field-hover: #e5e2db;
   --field-edge: rgb(0 0 0 / 0.06);
   --sale: #2e6f49;
+  /* the dark viewing room: home entrance and the in-page viewer */
+  --room: #1b1b1a;
+  --room-lit: #2a2a28;
+  --room-ink: #ecebe6;
+  --room-soft: #a3a097;
   --font: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
   --serif: 'Newsreader Variable', 'Newsreader', Georgia, serif;
   --gutter: clamp(1.25rem, 4vw, 4rem);
@@ -48,12 +53,22 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rise { from { opacity: 0; transform: translateY(0.2em); } to { opacity: 1; transform: none; } }
 
-/* ── Header ─────────────────────────────────────────────── */
+/* ── Header ───────────────────────────────────────────────
+   Over the dark entrance it is transparent and light (see Base.astro). */
 .site-header { position: sticky; top: 0; z-index: 50; height: var(--header); display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-inline: var(--gutter); background: rgb(243 242 239 / 0.92); backdrop-filter: blur(8px); }
 .site-mark { font-family: var(--serif); font-size: 1.25rem; letter-spacing: -0.01em; white-space: nowrap; }
 .site-nav ul { display: flex; gap: clamp(1.1rem, 2.6vw, 2.4rem); }
 .site-nav a { font-size: 0.92rem; color: var(--soft); transition: color 0.2s; }
 .site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--ink); }
+.site-header { transition: background 0.35s, color 0.35s; }
+.site-header.on-room { background: transparent; backdrop-filter: none; color: var(--room-ink); }
+.site-header.on-room .site-nav a { color: var(--room-soft); }
+.site-header.on-room .site-nav a:hover { color: var(--room-ink); }
+.site-header.on-room .site-mark { opacity: 0; pointer-events: none; }
+.site-mark { transition: opacity 0.35s; }
+.site-header.on-room :focus-visible { outline-color: var(--room-ink); }
+.has-room { background: var(--room); }
+.has-room main, .has-room .site-footer { background: var(--page); }
 
 /* ── The exhibition field ─────────────────────────────────
    Every work sits whole (contain) in a field: a ground a shade deeper than
@@ -112,26 +127,51 @@ a:hover > .art, a:focus-visible > .art { background: var(--field-hover); }
 .facts dd a { text-decoration: underline; text-underline-offset: 0.2em; }
 .section-title, .body-head h2 { font-family: var(--serif); font-size: clamp(1.7rem, 2.6vw, 2.4rem); font-weight: 300; letter-spacing: -0.02em; line-height: 1; }
 
-/* ── Home: opening ──────────────────────────────────────
-   Name, line and links sit on the same optical centre as the work, so the
-   two halves balance; the work's height is capped so it never towers. */
-.opening { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; min-height: min(calc(100svh - var(--header)), 56rem); padding: clamp(2rem, 4vw, 3.5rem) var(--gutter); }
-.hero-name { font-family: var(--serif); font-optical-sizing: auto; font-weight: 300; font-size: clamp(3.4rem, 7.6vw, 8.4rem); line-height: 0.88; letter-spacing: -0.035em; animation: rise 1.2s var(--ease) both; }
-.hero-name span, .hero-name em { display: block; }
-.hero-name em { font-style: italic; padding-left: 0.42em; }
-.opening-line { margin-top: clamp(1.4rem, 2.6vw, 2.2rem); max-width: 24em; color: var(--soft); font-size: clamp(1rem, 1.2vw, 1.1rem); }
-.opening-links { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1.6rem; font-size: 0.92rem; }
-.opening-links a { text-decoration: underline; text-underline-offset: 0.3em; text-decoration-color: var(--rule); }
-.opening-links a:hover { text-decoration-color: currentColor; }
-.opening-work { justify-self: center; width: min(100%, calc(min(70svh, 44rem) * var(--r))); }
+/* ── Home: the entrance ──────────────────────────────────
+   A dark viewing room with one work, shown whole and lit from above (a neutral
+   pool of light, never a colour taken from the work). The only orchestrated
+   motion on the site: the light comes up on the work once. */
+.entrance { position: relative; margin-top: calc(-1 * var(--header)); height: max(100svh, 36rem); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: var(--header) minmax(0, 1fr) auto; column-gap: 2rem; padding: 0 var(--gutter) clamp(1.4rem, 3vw, 2.4rem); background: radial-gradient(ellipse 60% 55% at 50% 42%, var(--room-lit), var(--room) 70%); color: var(--room-ink); }
+.entrance-work { grid-column: 1 / -1; grid-row: 2; min-height: 0; display: flex; align-items: center; justify-content: center; padding: clamp(1rem, 3vw, 2.5rem) 0 clamp(1.2rem, 2.5vw, 2rem); }
+.entrance-work picture { display: contents; }
+.entrance-work img { width: auto; height: auto; max-width: min(100%, 76rem); max-height: 100%; outline: 1px solid rgb(255 255 255 / 0.07); box-shadow: 0 2px 3px rgb(0 0 0 / 0.4), 0 40px 80px -40px rgb(0 0 0 / 0.9); animation: lights-up 2.2s var(--ease) both; }
+@keyframes lights-up { from { opacity: 0; filter: brightness(0.35); } 40% { opacity: 1; } to { opacity: 1; filter: none; } }
+.entrance-name { grid-column: 1; grid-row: 3; align-self: end; font-family: var(--serif); font-optical-sizing: auto; font-weight: 300; font-size: clamp(2.6rem, 5vw, 5.4rem); line-height: 0.86; letter-spacing: -0.035em; }
+.entrance-name span, .entrance-name em { display: block; }
+.entrance-name em { font-style: italic; padding-left: 0.42em; }
+.entrance-enter { grid-column: 2; grid-row: 3; align-self: end; font-size: 0.86rem; color: var(--room-soft); padding-bottom: 0.2rem; }
+.entrance-enter::after { content: ''; display: block; width: 1px; height: 2.2rem; margin: 0.6rem auto 0; background: currentColor; opacity: 0.5; }
+.entrance-enter:hover { color: var(--room-ink); }
+.entrance-label { grid-column: 3; grid-row: 3; align-self: end; justify-self: end; max-width: 22rem; text-align: right; padding-bottom: 0.2rem; }
+.label-title { font-family: var(--serif); font-style: italic; font-size: 1.15rem; line-height: 1.2; }
+.label-meta { font-size: 0.8rem; color: var(--room-soft); margin-top: 0.2rem; }
+.entrance :focus-visible { outline-color: var(--room-ink); }
 
-/* ── Home: bodies of work ───────────────────────────────── */
-.bodies { padding: 0 var(--gutter); }
-.body, .avail { padding: var(--section) 0 0; }
-.avail { margin-inline: var(--gutter); }
-.body-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1.6rem; padding-top: 1rem; margin-bottom: clamp(1.4rem, 2.4vw, 2rem); border-top: 1px solid var(--rule); }
-.body-head .quiet-link { margin-left: auto; }
-.body-intro { flex-basis: 100%; max-width: 40em; color: var(--soft); order: 3; }
+/* ── Home: rooms (one per body of work) ───────────────────
+   A room number, the title and its facts sit in a narrow column; the works
+   hang on one line beside it, sharing a height. */
+.rooms { padding: var(--section) var(--gutter) 0; }
+.rooms-intro { max-width: 32em; margin-bottom: clamp(2.5rem, 5vw, 4rem); font-family: var(--serif); font-weight: 300; font-size: clamp(1.35rem, 2.2vw, 1.9rem); line-height: 1.25; letter-spacing: -0.01em; text-wrap: balance; }
+.rooms-intro a { font-family: var(--font); font-size: 0.5em; letter-spacing: 0; white-space: nowrap; margin-left: 0.6em; text-decoration: underline; text-underline-offset: 0.3em; text-decoration-color: var(--rule); vertical-align: 0.25em; }
+.rooms-intro a:hover { text-decoration-color: currentColor; }
+.room { display: grid; grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 4rem); padding: clamp(2rem, 4vw, 3.2rem) 0 clamp(3rem, 6vw, 5rem); border-top: 1px solid var(--rule); }
+.room-head { display: flex; flex-direction: column; gap: 0.15rem; }
+.room-no { font-family: var(--serif); font-weight: 300; font-size: clamp(2.6rem, 4.4vw, 4.2rem); line-height: 0.9; letter-spacing: -0.03em; color: #c4c1b9; font-variant-numeric: lining-nums; margin-bottom: auto; padding-bottom: 1.5rem; }
+.room-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(1.5rem, 2.2vw, 2.1rem); line-height: 1.05; letter-spacing: -0.02em; }
+.room-facts { font-size: 0.8rem; color: var(--soft); }
+.room-intro { font-size: 0.88rem; color: var(--soft); margin-top: 0.6rem; }
+.room-link { align-self: start; margin-top: 1rem; font-size: 0.88rem; text-decoration: underline; text-underline-offset: 0.3em; text-decoration-color: var(--rule); }
+.room-link:hover { text-decoration-color: currentColor; }
+.room .hang { justify-content: flex-start; align-items: flex-end; }
+/* one hanging height for every room, whether it holds one work or four */
+.room .hang-l { --row: min(40svh, 21rem); }
+.avail .hang { justify-content: flex-start; }
+
+.avail { margin: 0 var(--gutter); padding: clamp(2rem, 4vw, 3.2rem) 0 0; border-top: 1px solid var(--rule); }
+.avail-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 1.4rem; margin-bottom: clamp(1.4rem, 2.4vw, 2rem); }
+.avail-head h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(1.5rem, 2.2vw, 2.1rem); letter-spacing: -0.02em; }
+.avail-head p { font-size: 0.88rem; color: var(--soft); }
+.avail-head .quiet-link { margin-left: auto; }
 .closing { margin: var(--section) var(--gutter) 0; padding: var(--section) 0; border-top: 1px solid var(--rule); }
 .closing-statement { max-width: 22em; font-family: var(--serif); font-weight: 300; font-size: clamp(1.5rem, 2.8vw, 2.6rem); line-height: 1.18; letter-spacing: -0.015em; text-wrap: balance; }
 .closing-links { display: flex; flex-wrap: wrap; gap: 0.6rem 1.8rem; margin-top: 1.8rem; font-size: 0.92rem; }
@@ -182,10 +222,16 @@ a:hover > .art, a:focus-visible > .art { background: var(--field-hover); }
 .work-main picture { display: contents; }
 .work-main img { width: auto; height: auto; max-width: 100%; max-height: min(calc(100svh - var(--header) - 4rem), 64rem); box-shadow: 0 1px 1px rgb(0 0 0 / 0.07), 0 16px 32px -18px rgb(0 0 0 / 0.42); }
 .work-caption { padding-bottom: 0.5rem; }
-.wc-artist { font-size: 0.86rem; color: var(--soft); }
-.wc-title { font-family: var(--serif); font-size: clamp(2.1rem, 3.4vw, 3.2rem); font-weight: 300; line-height: 1; letter-spacing: -0.025em; margin: 0.3rem 0 1.5rem; }
-.wc-price { font-size: 1.3rem; font-weight: 500; margin-top: 1.2rem; }
-.wc-price span { font-size: 0.86rem; color: var(--soft); }
+.label-artist { font-size: 0.86rem; color: var(--soft); }
+.label-heading { font-family: var(--serif); font-weight: 300; font-size: clamp(1.9rem, 3vw, 2.8rem); line-height: 1.05; letter-spacing: -0.02em; margin: 0.35rem 0 1.1rem; text-wrap: balance; }
+.label-heading em { font-style: italic; }
+.label-lines { display: grid; gap: 0.15rem; font-size: 0.95rem; color: #3a3936; }
+.label-soft { color: var(--soft); }
+.label-where { margin-top: 0.9rem; font-size: 0.84rem; color: var(--soft); }
+.label-where a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 0.2em; }
+.label-sale { margin-top: 1.6rem; padding-top: 1.1rem; border-top: 1px solid var(--rule); font-size: 0.92rem; }
+.label-price { font-size: 1.15rem; margin-top: 0.35rem; }
+.label-price span { font-size: 0.84rem; color: var(--soft); }
 .wc-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.3rem; }
 .strip { overflow-x: auto; padding: 0 0 2.5rem; scrollbar-width: thin; }
 .strip ol { display: flex; gap: var(--col-gap); padding-inline: var(--gutter); width: max-content; }
@@ -203,21 +249,23 @@ a:hover > .art, a:focus-visible > .art { background: var(--field-hover); }
 .work-nav .work-nav-all { text-decoration: underline; text-underline-offset: 0.2em; }
 
 /* in-page viewer */
-.viewer { border: 0; padding: 0; margin: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; background: var(--page); color: var(--ink); }
-.viewer::backdrop { background: rgb(243 242 239 / 0.97); }
+.viewer { border: 0; padding: 0; margin: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; background: radial-gradient(ellipse 60% 60% at 40% 45%, var(--room-lit), var(--room) 72%); color: var(--room-ink); }
+.viewer::backdrop { background: rgb(27 27 26 / 0.97); }
+.viewer :focus-visible { outline-color: var(--room-ink); }
+.viewer .lb-btn:hover { background: rgb(255 255 255 / 0.08); }
 .viewer[open] { display: grid; grid-template-rows: auto 1fr; animation: fade 0.3s ease both; }
 .viewer-open { overflow: hidden; }
 .viewer-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem var(--gutter); }
-.viewer-count { font-size: 0.84rem; color: var(--soft); font-variant-numeric: tabular-nums; }
+.viewer-count { font-size: 0.84rem; color: var(--room-soft); font-variant-numeric: tabular-nums; }
 .viewer-body { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1rem; padding: 0 var(--gutter) 1.5rem; height: calc(100dvh - 4.5rem); min-height: 0; }
 .viewer-figure { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 19rem); gap: clamp(1.5rem, 4vw, 4rem); align-items: end; height: 100%; min-height: 0; }
 .viewer-img { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 0; min-width: 0; }
-.viewer-img img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; opacity: 0; transition: opacity 0.35s ease; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 20px 44px -26px rgb(0 0 0 / 0.45); touch-action: pan-y; }
+.viewer-img img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; opacity: 0; transition: opacity 0.35s ease; box-shadow: 0 2px 3px rgb(0 0 0 / 0.4), 0 40px 80px -40px rgb(0 0 0 / 0.9); touch-action: pan-y; outline: 1px solid rgb(255 255 255 / 0.07); }
 .viewer-img img.is-loaded { opacity: 1; }
 .viewer-cap { display: grid; gap: 0.4rem; padding-bottom: 0.5rem; }
 .viewer-title { font-family: var(--serif); font-weight: 300; font-size: clamp(1.6rem, 2.4vw, 2.3rem); line-height: 1.05; letter-spacing: -0.02em; }
-.viewer-meta { font-size: 0.88rem; color: var(--soft); }
-.viewer-status { font-size: 0.88rem; color: #2e7d4f; }
+.viewer-meta { font-size: 0.88rem; color: var(--room-soft); }
+.viewer-status { font-size: 0.88rem; color: #8fcaa5; }
 .viewer-link { justify-self: start; margin-top: 0.8rem; font-size: 0.9rem; text-decoration: underline; text-underline-offset: 0.25em; }
 
 /* viewer */
@@ -253,12 +301,18 @@ a:hover > .art, a:focus-visible > .art { background: var(--field-hover); }
 .available-meta { font-size: 0.88rem; color: var(--soft); }
 .available-price { font-variant-numeric: tabular-nums; }
 
+.preview-flag { position: fixed; left: 1rem; bottom: 1rem; z-index: 60; padding: 0.45rem 0.85rem; border-radius: 999px; background: var(--ink); color: var(--page); font-size: 0.78rem; box-shadow: 0 6px 18px -8px rgb(0 0 0 / 0.5); }
+.preview-flag:hover { opacity: 0.85; }
 .site-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding: 2rem var(--gutter); font-size: 0.8rem; color: var(--soft); }
 
 /* ── Tablet ─────────────────────────────────────────────── */
 @media (max-width: 60rem) {
-  .opening { grid-template-columns: 1fr; min-height: auto; align-items: start; gap: 2rem; }
-  .opening-work { justify-self: start; width: min(100%, calc(62svh * var(--r)), 34rem); }
+  .room { grid-template-columns: 1fr; gap: 1.4rem; }
+  .room-head { display: grid; grid-template-columns: auto 1fr; column-gap: 1.1rem; align-items: baseline; }
+  .room-no { grid-row: span 2; margin: 0; padding: 0; font-size: 2.6rem; }
+  .room-head h2 { align-self: end; }
+  .room-intro, .room-link { grid-column: 2; }
+  .room-link { margin-top: 0.4rem; justify-self: start; }
   .work-top { grid-template-columns: 1fr; }
   .work-text, .page-cols { grid-template-columns: 1fr; }
 }
@@ -266,10 +320,19 @@ a:hover > .art, a:focus-visible > .art { background: var(--field-hover); }
 /* ── Phone: the same hang at a smaller scale ───────────── */
 @media (max-width: 40rem) {
   :root { --header: 3.75rem; --col-gap: 0.9rem; --row-gap: 1.8rem; --section: 4.5rem; }
-  .hero-name { font-size: 19vw; }
-  .opening-text { padding-top: 0.5rem; }
-  .opening-work { width: min(100%, calc(60svh * var(--r))); }
-  .hang-l { --row: calc((100vw - 2 * var(--gutter) - var(--col-gap)) / 2.1); }
+  .site-nav ul { gap: 0.95rem; }
+  .site-nav a { font-size: 0.85rem; }
+  .site-mark { font-size: 1.1rem; }
+  .entrance { grid-template-columns: 1fr; grid-template-rows: var(--header) auto auto auto; height: auto; row-gap: 1.6rem; padding-bottom: 2rem; }
+  .entrance-work { grid-row: 2; padding: 1.5rem 0 0.5rem; }
+  .entrance-work img { max-height: 62svh; }
+  .entrance-work { display: block; }
+  .entrance-name { grid-column: 1; grid-row: 3; font-size: 17vw; }
+  .entrance-label { grid-column: 1; grid-row: 4; justify-self: start; text-align: left; }
+  .entrance-enter { display: none; }
+  .rooms-intro a { display: block; margin: 0.8rem 0 0; vertical-align: 0; font-size: 0.9rem; }
+  .preview-flag { left: 0.6rem; bottom: 0.6rem; }
+  .hang-l, .room .hang-l { --row: calc((100vw - 2 * var(--gutter) - var(--col-gap)) / 2.1); }
   .hang-line { flex-wrap: wrap; }
   .hang-line > li { flex-grow: 1; max-width: calc(var(--r) * var(--row) * 1.3); }
   :root { --section: 3.5rem; }
