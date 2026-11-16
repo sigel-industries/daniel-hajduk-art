@@ -60,7 +60,7 @@ const jsonLd = {
         </div>
         <p class="label-where">
           <a href={url(`/works/${category.id}/`)}>{category.singular}</a>
-          {group && <> · <a href={url(`/works/?g=${group.id}`)}>{group.title}</a></>}
+          {group && <> · <a href={url(`/rooms/${group.id}/`)}>{group.title}</a></>}
         </p>
         <div class="label-sale">
           {d.availability && <p class="status" data-state={d.availability}>{AVAILABILITY_LABEL[d.availability]}{d.availability === 'available' && d.edition && d.edition.available.length > 0 && `, copies ${d.edition.available.join(' and ')}`}</p>}

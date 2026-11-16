@@ -36,3 +36,27 @@ export async function captionOf(w: Work, withTechnique = true): Promise<string> 
   const d = w.data;
   return [(await categoryOf(w)).singular, d.year, withTechnique && (d.technique ?? d.materials), d.dimensions].filter(Boolean).join(', ');
 }
+
+/**
+ * Rooms: one per body of work that has at least one work, in group order,
+ * numbered from 01. Works without a group form a last room, "Other works".
+ * The home page and the room pages share this, so numbers always agree.
+ */
+export interface Room { id: string; no: string; title: string; intro?: string; works: Work[] }
+export async function getRooms(works: Work[]): Promise<Room[]> {
+  const groups = await getGroups();
+  const rooms: Room[] = [];
+  const add = (id: string, title: string, intro: string | undefined, list: Work[]) => {
+    if (list.length) rooms.push({ id, no: String(rooms.length + 1).padStart(2, '0'), title, intro, works: list });
+  };
+  for (const g of groups) add(g.id, g.title, g.intro, works.filter((w) => w.data.group === g.id));
+  add('other-works', 'Other works', undefined, works.filter((w) => !w.data.group));
+  return rooms;
+}
+/** Year span of a set of works ("2019–2025"), or '' when no years are given. */
+export function yearSpan(works: Work[]): string {
+  const ys = works.map((w) => w.data.year).filter((y): y is number => typeof y === 'number');
+  if (!ys.length) return '';
+  const a = Math.min(...ys), b = Math.max(...ys);
+  return a === b ? `${a}` : `${a}–${b}`;
+}

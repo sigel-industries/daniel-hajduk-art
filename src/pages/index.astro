@@ -26,12 +26,11 @@ const availableItems = await Promise.all(available.map(async (w) => ({ w, v: awa
     <a class="entrance-work" href={workUrl(lead.data.category, lead.id)} {...leadV}>
       <Picture src={lead.data.cover} alt={lead.data.coverAlt} widths={[560, 800, 1100, 1500, 2000, 2600]} sizes="(max-width: 40rem) 92vw, 70vw" formats={['avif', 'webp']} loading="eager" fetchpriority="high" />
     </a>
-    <h1 class="entrance-name" id="hero-name"><span>Daniel</span> <em>Hajduk</em></h1>
+    <h1 class="entrance-name" id="hero-name">Daniel Hajduk</h1>
     <div class="entrance-label">
       <p class="label-title">{lead.data.title}</p>
       <p class="label-meta">{leadCap}</p>
     </div>
-    <a class="entrance-enter" href="#rooms">Enter the gallery</a>
   </section>
 
   <div id="rooms" class="rooms">

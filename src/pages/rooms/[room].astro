@@ -1,0 +1,61 @@
+---
+/**
+ * A room: one body of work, hung one work at a time. Each work is shown whole
+ * at a generous size with its wall label beside it; clicking opens the viewer.
+ */
+import { Picture } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Viewer from '../../components/Viewer.astro';
+import { getWorks } from '../../lib/works';
+import { sequence } from '../../lib/curation';
+import { viewerAttrs } from '../../lib/viewer';
+import { getRooms, yearSpan, categoryOf, type Room } from '../../lib/taxonomy';
+import { inches } from '../../lib/label';
+import { AVAILABILITY_LABEL } from '../../data/site';
+import { url, workUrl, formatPrice } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const rooms = await getRooms(await getWorks());
+  return rooms.map((room, i) => ({ params: { room: room.id }, props: { room, prev: rooms[i - 1] ?? null, next: rooms[i + 1] ?? null } }));
+}
+const { room, prev, next } = Astro.props as { room: Room; prev: Room | null; next: Room | null };
+const span = yearSpan(room.works);
+const hung = await Promise.all((await sequence(room.works)).map(async (w) => ({ w, v: await viewerAttrs(w), cat: await categoryOf(w) })));
+---
+<Base title={room.title} current="works" description={`${room.title}: ${room.works.length} works by Daniel Hajduk.${room.intro ? ' ' + room.intro : ''}`} image={room.works[0].data.cover} imageAlt={room.works[0].data.coverAlt}>
+  <header class="room-page-head">
+    <p class="room-no" aria-hidden="true">{room.no}</p>
+    <h1 class="room-page-title">{room.title}</h1>
+    <p class="room-facts">{room.works.length === 1 ? '1 work' : `${room.works.length} works`}{span && `, ${span}`}</p>
+    {room.intro && <p class="room-page-intro">{room.intro}</p>}
+  </header>
+
+  <ol class="wall">
+    {hung.map(({ w, v, cat }) => {
+      const d = w.data;
+      const sale = d.availability === 'available' || d.availability === 'on-request';
+      return (
+        <li class="station">
+          <a class="station-work" href={workUrl(d.category, w.id)} {...v}>
+            <Picture src={d.cover} alt={d.coverAlt} widths={[480, 800, 1100, 1500, 2000]} sizes="(max-width: 40rem) 92vw, 64vw" formats={['avif', 'webp']} loading="lazy" decoding="async" />
+          </a>
+          <div class="station-label">
+            <p class="hang-label-title"><a href={workUrl(d.category, w.id)}>{d.title}</a>{d.year && <span class="station-year">, {d.year}</span>}</p>
+            <p class="station-meta">{[cat.singular, d.technique ?? d.materials].filter(Boolean).join(', ')}</p>
+            {d.dimensions && <p class="station-meta">{d.dimensions}{inches(d.dimensions) && ` / ${inches(d.dimensions)}`}</p>}
+            {d.edition && <p class="station-meta">Edition of {d.edition.size}</p>}
+            {sale && <p class="station-sale">{d.price && d.availability === 'available' ? formatPrice(d.price.amount, d.price.currency) : 'Price on request'}</p>}
+            {!sale && d.availability && <p class="station-meta">{AVAILABILITY_LABEL[d.availability]}</p>}
+          </div>
+        </li>
+      );
+    })}
+  </ol>
+
+  <nav class="room-nav" aria-label="Rooms">
+    {prev ? <a href={url(`/rooms/${prev.id}/`)}><span>{prev.no}</span>{prev.title}</a> : <span />}
+    <a class="room-nav-all" href={url('/works/')}>All works</a>
+    {next ? <a href={url(`/rooms/${next.id}/`)}><span>{next.no}</span>{next.title}</a> : <span />}
+  </nav>
+  <Viewer />
+</Base>

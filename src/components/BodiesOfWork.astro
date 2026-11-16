@@ -1,47 +1,38 @@
 ---
-import { fieldRatio } from '../lib/field';
 /**
- * Home page presentation: one room per body of work (src/content/groups/),
- * in their order. Each section shows the works marked `selected` (or, if none,
- * the first works of the group): up to four, hung on one line at the home page
- * scale (see .hang-line in global.css). Works without a group are
- * gathered under "Other works". New groups and works appear automatically.
+ * Home page: one room per body of work (see getRooms in lib/taxonomy.ts).
+ * Each shows its selected works first, up to four, hung on one line at a
+ * shared height, and leads to the room's own page. New groups and works
+ * appear automatically.
  */
+import { fieldRatio } from '../lib/field';
 import Mount from './Mount.astro';
 import type { Work } from '../lib/works';
 import { sequence } from '../lib/curation';
 import { viewerAttrs } from '../lib/viewer';
-import { getGroups, captionOf } from '../lib/taxonomy';
+import { getRooms, yearSpan, captionOf } from '../lib/taxonomy';
 import { workUrl, url } from '../lib/url';
 
 interface Props { works: Work[]; exclude?: string }
 const { works, exclude } = Astro.props;
-const groups = await getGroups();
 const sections = [];
-for (const g of [...groups, { id: '', title: 'Other works', order: 999 }]) {
-  const all = works.filter((w) => (w.data.group ?? '') === g.id);
-  if (!all.length) continue;
-  const pool = all.filter((w) => w.id !== exclude);
+for (const room of await getRooms(works)) {
+  const pool = room.works.filter((w) => w.id !== exclude);
   const picked = pool.filter((w) => w.data.selected);
-  const src = [...picked, ...pool.filter((w) => !picked.includes(w))];
-  // up to four works on one line; the line scales down to fit, keeping one height
-  const shown: Work[] = (await sequence(src)).slice(0, 4);
+  const shown: Work[] = (await sequence([...picked, ...pool.filter((w) => !picked.includes(w))])).slice(0, 4);
   if (!shown.length) continue;
-
   const items = await Promise.all(shown.map(async (w) => ({ w, v: await viewerAttrs(w), cap: await captionOf(w, false) })));
-  const years = all.map((w) => w.data.year).filter((y): y is number => typeof y === 'number');
-  const span = years.length ? (Math.min(...years) === Math.max(...years) ? `${years[0]}` : `${Math.min(...years)}–${Math.max(...years)}`) : '';
-  sections.push({ g, total: all.length, span, items });
+  sections.push({ room, span: yearSpan(room.works), items });
 }
 ---
-{sections.map(({ g, total, span, items }, si) => (
-  <section class="room" aria-labelledby={`room-${si}`}>
+{sections.map(({ room, span, items }) => (
+  <section class="room" aria-labelledby={`room-${room.id}`}>
     <header class="room-head">
-      <p class="room-no" aria-hidden="true">{String(si + 1).padStart(2, '0')}</p>
-      <h2 id={`room-${si}`}>{g.title}</h2>
-      <p class="room-facts">{total === 1 ? '1 work' : `${total} works`}{span && `, ${span}`}</p>
-      {'intro' in g && g.intro && <p class="room-intro">{g.intro}</p>}
-      <a class="room-link" href={g.id ? url(`/works/?g=${g.id}`) : url('/works/')}>Enter room</a>
+      <p class="room-no" aria-hidden="true">{room.no}</p>
+      <h2 id={`room-${room.id}`}>{room.title}</h2>
+      <p class="room-facts">{room.works.length === 1 ? '1 work' : `${room.works.length} works`}{span && `, ${span}`}</p>
+      {room.intro && <p class="room-intro">{room.intro}</p>}
+      <a class="room-link" href={url(`/rooms/${room.id}/`)}>Enter room</a>
     </header>
     <ul class="hang hang-l hang-line">
       {items.map(({ w, v, cap }) => (
