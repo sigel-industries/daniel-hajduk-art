@@ -3,9 +3,11 @@ name: Build and deploy to GitHub Pages
 # The live site is always built from main. If a branch named "next" exists,
 # it is built too and served beside it under /next/ as a design preview,
 # so a new version can be compared with the current one before it replaces it.
+# Only main may deploy to Pages, so after pushing next, run this workflow on
+# main (Actions > Run workflow, or: gh workflow run deploy.yml --ref main).
 on:
   push:
-    branches: [main, next]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
