@@ -1,8 +1,11 @@
 name: Build and deploy to GitHub Pages
 
+# The live site is always built from main. If a branch named "next" exists,
+# it is built too and served beside it under /next/ as a design preview,
+# so a new version can be compared with the current one before it replaces it.
 on:
   push:
-    branches: [main]
+    branches: [main, next]
   workflow_dispatch:
 
 permissions:
@@ -19,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -38,6 +43,18 @@ jobs:
           fi
       - name: Build and check
         run: npm test
+      - name: Build the design preview from branch next (if it exists)
+        run: |
+          if git ls-remote --exit-code --heads origin next >/dev/null; then
+            git fetch --depth 1 origin next
+            git worktree add _next FETCH_HEAD
+            cd _next
+            npm ci
+            BASE_PATH="$BASE_PATH/next" PREVIEW=1 npx astro build
+            cd ..
+            mkdir -p dist/next
+            cp -r _next/dist/. dist/next/
+          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
